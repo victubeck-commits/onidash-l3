@@ -5,7 +5,7 @@ a = Analysis(
     ['xbox_dash_l3.py'],
     pathex=[],
     binaries=[],
-    datas=[('C:/Users/victu/AppData/Local/Programs/Python/Python312/Lib/site-packages/vgamepad/win/vigem', 'vgamepad/win/vigem'), ('C:/Users/victu/Documents/XboxDashL3/app.ico', '.'), ('i18n.py', '.')],
+    datas=[('C:/Users/victu/AppData/Local/Programs/Python/Python312/Lib/site-packages/vgamepad/win/vigem', 'vgamepad/win/vigem'), ('app.ico', '.'), ('i18n.py', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -32,7 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:/Users/victu/Documents/XboxDashL3/app.ico'],
+    icon=['app.ico'],
 )
 coll = COLLECT(
     exe,

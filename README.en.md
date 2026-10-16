@@ -11,10 +11,14 @@ Running in games like Onimusha can rely on double-tapping the left stick or pres
 - Real-time reading of the real Xbox controller via XInput.
 - Virtual Xbox controller via ViGEmBus/vgamepad.
 - Mirroring of all axes and buttons to the virtual controller.
-- Analog trigger: push the stick forward 0 to 4 times. 0 means hold to activate.
-- Button trigger: choose A, B, X, Y, LB, RB, LT, RT, L3/L4, Start, Back or D-Pad, with 1 to 4 presses.
-- L3 mode: Hold (keeps running while walking) or Tap (quick click).
-- Configurable activation and deactivation delay (0 to 1000 ms), with enable/disable option.
+- Visual mapping editor: pick the physical input (with a "Detect input" button that reads the press for you), the target action and the activation mode using selectors only - no code to type.
+- Activation modes: Hold, Single tap, Toggle, Repeat and Analog threshold.
+- Repeat Nx per activation (e.g. exactly 3 times per tap), with interval, press duration and an optional continuous repeat (off by default).
+- Activation conditions: direct, analog threshold or quick tap sequence (e.g. double-push of the LS), with an optional modifier input (e.g. LB).
+- "Test mapping" button sends the sequence to the virtual controller before saving.
+- List with a readable summary (e.g. `LS to B · Repeat 3x · Interval 300 ms`), double-click to edit, duplicate, enable/disable and remove.
+- Conflict warning between mappings before saving.
+- Automatic migration of old settings, without discarding data.
 - Dark/gold UI, icon, real-time status and LS indicator.
 - Optional HidHide support to hide the real controller while running, making the virtual one primary.
 - Languages: Portuguese, English, Spanish.
@@ -42,10 +46,11 @@ Open `dist\OniDashL3\OniDashL3.exe` or the `OniDash L3` shortcut.
 
 Steps:
 1. Connect the Xbox controller via USB.
-2. Select the controller in the list.
-3. Adjust triggers, mode and delays.
-4. Enable the function.
-5. In the game/Steam, choose the virtual controller if needed.
+2. In Settings, pick the XInput slot of the controller.
+3. In Mapping, click "Add mapping".
+4. Choose the input (or use "Detect input" and press it), the action, the mode and options.
+5. Use "Test mapping" to check, then "Save".
+6. In the game/Steam, choose the virtual controller if needed.
 
 ## HidHide (optional)
 

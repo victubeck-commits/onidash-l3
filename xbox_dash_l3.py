@@ -6,7 +6,7 @@ import locale
 import threading
 import time
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, font as tkfont
+from tkinter import ttk, messagebox, filedialog, simpledialog, font as tkfont
 import XInput
 import vgamepad as vg
 
@@ -32,7 +32,48 @@ CARD = "#1F2631"
 BORDER = "#2B3444"
 DANGER = "#F87171"
 
+BUTTON_INPUTS = ["A", "B", "X", "Y", "LB", "RB", "LS", "RS", "START", "BACK", "DPAD_UP", "DPAD_DOWN", "DPAD_LEFT", "DPAD_RIGHT"]
+AXIS_INPUTS = ["LS_UP", "LS_DOWN", "LS_LEFT", "LS_RIGHT", "RS_UP", "RS_DOWN", "RS_LEFT", "RS_RIGHT"]
+TRIGGER_INPUTS = ["LT", "RT"]
+ANALOG_INPUTS = AXIS_INPUTS + TRIGGER_INPUTS
+ALL_INPUTS = BUTTON_INPUTS + ANALOG_INPUTS
 
+INPUT_LABELS = {
+    "A": "A", "B": "B", "X": "X", "Y": "Y", "LB": "LB", "RB": "RB",
+    "LS": "LS / L3", "RS": "RS / R3", "START": "Start (Menu)", "BACK": "Back (View)",
+    "DPAD_UP": "D-Pad \u2191", "DPAD_DOWN": "D-Pad \u2193", "DPAD_LEFT": "D-Pad \u2190", "DPAD_RIGHT": "D-Pad \u2192",
+    "LS_UP": "LS \u2191", "LS_DOWN": "LS \u2193", "LS_LEFT": "LS \u2190", "LS_RIGHT": "LS \u2192",
+    "RS_UP": "RS \u2191", "RS_DOWN": "RS \u2193", "RS_LEFT": "RS \u2190", "RS_RIGHT": "RS \u2192",
+    "LT": "LT", "RT": "RT",
+}
+
+ACTION_TARGETS = ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "LS", "RS", "DPAD_UP", "DPAD_DOWN", "DPAD_LEFT", "DPAD_RIGHT", "START", "BACK"]
+ACTION_LABELS = {k: INPUT_LABELS.get(k, k) for k in ACTION_TARGETS}
+
+XINPUT_BUTTON_NAMES = {
+    "A": "A", "B": "B", "X": "X", "Y": "Y",
+    "LB": "LEFT_SHOULDER", "RB": "RIGHT_SHOULDER",
+    "LS": "LEFT_THUMB", "RS": "RIGHT_THUMB",
+    "START": "START", "BACK": "BACK",
+    "DPAD_UP": "DPAD_UP", "DPAD_DOWN": "DPAD_DOWN", "DPAD_LEFT": "DPAD_LEFT", "DPAD_RIGHT": "DPAD_RIGHT",
+}
+
+BUTTON_MAP = {
+    "A": vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
+    "B": vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
+    "X": vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
+    "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
+    "LB": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER,
+    "RB": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER,
+    "LS": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB,
+    "RS": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB,
+    "START": vg.XUSB_BUTTON.XUSB_GAMEPAD_START,
+    "BACK": vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK,
+    "DPAD_UP": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP,
+    "DPAD_DOWN": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN,
+    "DPAD_LEFT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT,
+    "DPAD_RIGHT": vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT,
+}
 def config_defaults(lang=None):
     if lang is None:
         loc = locale.getdefaultlocale()[0] or "pt"
@@ -44,14 +85,14 @@ def config_defaults(lang=None):
         "hidhide": False,
         "startup": False,
         "profile_name": "Default",
-        "profiles": [{"name":"Default","description":"Default profile","mappings":[]}],
+        "profiles": [{"name": "Default", "description": "Default profile", "mappings": []}],
         "analog": {
-            "left": {"deadzone":0.08,"sensitivity":1.0,"curve":1.0,"invert_x":False,"invert_y":False,"threshold":0.78,"hysteresis":0.22},
-            "right": {"deadzone":0.08,"sensitivity":1.0,"curve":1.0,"invert_x":False,"invert_y":False,"threshold":0.78,"hysteresis":0.22},
+            "left": {"deadzone": 0.08, "sensitivity": 1.0, "curve": 1.0, "invert_x": False, "invert_y": False, "threshold": 0.78, "hysteresis": 0.22},
+            "right": {"deadzone": 0.08, "sensitivity": 1.0, "curve": 1.0, "invert_x": False, "invert_y": False, "threshold": 0.78, "hysteresis": 0.22},
         },
         "triggers": {
-            "left": {"deadzone":0.05,"sensitivity":1.0,"invert":False},
-            "right": {"deadzone":0.05,"sensitivity":1.0,"invert":False},
+            "left": {"deadzone": 0.05, "sensitivity": 1.0, "invert": False},
+            "right": {"deadzone": 0.05, "sensitivity": 1.0, "invert": False},
         },
         "mappings": [],
         "legacy": {},
@@ -95,6 +136,111 @@ def _deep_update(a, b):
         a = None if False else b
 
 
+def default_mapping():
+    return {
+        "id": 0,
+        "enabled": True,
+        "name": "",
+        "input": "A",
+        "modifier": "",
+        "condition": {"type": "direct", "count": 2, "interval_ms": 320, "threshold": 0.78},
+        "mode": "hold",
+        "action": "B",
+        "tap_ms": 80,
+        "repeat": {"count": 3, "interval_ms": 300, "press_ms": 60, "continuous": False},
+        "delay": {"enabled": False, "activate_ms": 0, "deactivate_ms": 0},
+    }
+
+
+OLD_BUTTON_ALIASES = {"L3": "LS", "R3": "RS", "Start": "START", "Back": "BACK"}
+
+
+def normalize_mapping(m):
+    """Convert old-format mappings to the current format and fill missing fields."""
+    if not isinstance(m, dict):
+        m = {}
+    d = default_mapping()
+    if "condition" in m and isinstance(m.get("action"), str):
+        out = dict(d)
+        for k, v in m.items():
+            if k not in ("condition", "repeat", "delay"):
+                out[k] = v
+        out["condition"] = {**d["condition"], **(m.get("condition") or {})}
+        out["repeat"] = {**d["repeat"], **(m.get("repeat") or {})}
+        out["delay"] = {**d["delay"], **(m.get("delay") or {})}
+        if out.get("input") not in ALL_INPUTS:
+            out["input"] = "A"
+        if out.get("action") not in ACTION_TARGETS:
+            out["action"] = "B"
+        if out.get("mode") not in ("hold", "tap", "toggle", "repeat", "threshold"):
+            out["mode"] = "hold"
+        return out
+    # ----- old format conversion -----
+    inp = m.get("input", "A")
+    if inp == "left_stick_forward":
+        inp = "LS_UP"
+    elif inp == "button":
+        inp = m.get("button", "A")
+    inp = OLD_BUTTON_ALIASES.get(inp, inp)
+    if inp not in ALL_INPUTS:
+        inp = "A"
+    trig = m.get("trigger") or {}
+    act = m.get("action") if isinstance(m.get("action"), dict) else {}
+    mode = act.get("mode", "hold")
+    if mode not in ("hold", "tap", "toggle", "repeat", "threshold"):
+        mode = "hold"
+    target = act.get("target", "LS")
+    if target not in ACTION_TARGETS:
+        target = "LS"
+    ctype = "direct"
+    count = 2
+    interval = 320
+    ttype = trig.get("type", "tap")
+    try:
+        thr = float(trig.get("threshold", 0.78) or 0.78)
+    except Exception:
+        thr = 0.78
+    if ttype == "threshold":
+        ctype = "threshold"
+    elif ttype == "tap":
+        try:
+            cnt = int(trig.get("tap_count", 2) or 2)
+        except Exception:
+            cnt = 2
+        if cnt >= 2:
+            ctype = "sequence"
+            count = min(5, cnt)
+            try:
+                interval = int(trig.get("interval_ms", 320) or 320)
+            except Exception:
+                interval = 320
+    try:
+        press = int(trig.get("hold_ms", 130) or 130)
+    except Exception:
+        press = 130
+    try:
+        rep_interval = int(trig.get("interval_ms", 300) or 300)
+    except Exception:
+        rep_interval = 300
+    rep_interval = max(40, rep_interval)
+    press = max(20, min(press, rep_interval - 10))
+    return {
+        "id": m.get("id", 0),
+        "enabled": bool(m.get("enabled", True)),
+        "name": m.get("name", ""),
+        "input": inp,
+        "modifier": "",
+        "condition": {"type": ctype, "count": count, "interval_ms": interval, "threshold": max(0.05, min(0.98, thr))},
+        "mode": mode,
+        "action": target,
+        "tap_ms": max(20, press),
+        "repeat": {"count": 3, "interval_ms": rep_interval, "press_ms": press, "continuous": False},
+        "delay": {
+            "enabled": bool(trig.get("delay_enabled", False)),
+            "activate_ms": int(trig.get("delay_activate_ms", 0) or 0),
+            "deactivate_ms": int(trig.get("delay_deactivate_ms", 0) or 0),
+        },
+    }
 def migrate(cfg):
     legacy = cfg.get("legacy", {})
     # Preserve old L3 settings into mappings if no mappings yet.
@@ -131,9 +277,203 @@ def migrate(cfg):
     # Normalize profiles
     if not cfg.get("profiles"):
         cfg["profiles"] = [{"name": cfg.get("profile_name", "Default"), "description": "", "mappings": list(cfg.get("mappings", []))}]
-    cfg["profile_name"] = cfg["profiles"][0]["name"] if cfg["profiles"] else "Default"
+    names = [p.get("name") for p in cfg["profiles"]]
+    if cfg.get("profile_name") not in names:
+        cfg["profile_name"] = names[0] if names else "Default"
+    # Normalize all mappings to the current format
+    cfg["mappings"] = [normalize_mapping(m) for m in cfg.get("mappings", [])]
+    for p in cfg["profiles"]:
+        p["mappings"] = [normalize_mapping(m) for m in p.get("mappings", [])]
+    # If the active profile is empty but top-level mappings exist, mirror them
+    active = None
+    for p in cfg["profiles"]:
+        if p.get("name") == cfg.get("profile_name"):
+            active = p
+            break
+    if active is None and cfg["profiles"]:
+        active = cfg["profiles"][0]
+        cfg["profile_name"] = active.get("name", "Default")
+    if active is not None and not active.get("mappings") and cfg["mappings"]:
+        active["mappings"] = [json.loads(json.dumps(m)) for m in cfg["mappings"]]
+    # Ensure unique ids within each profile
+    for p in cfg["profiles"]:
+        seen = set()
+        for m in p.get("mappings", []):
+            mid = m.get("id")
+            if not mid or mid in seen:
+                nid = 1
+                while nid in seen:
+                    nid += 1
+                m["id"] = nid
+            seen.add(m["id"])
 
 
+def input_state(key, vals):
+    """Return (value, is_analog) for a physical input key given controller values."""
+    if key in BUTTON_INPUTS:
+        return (1.0 if vals.get("buttons", {}).get(key) else 0.0, False)
+    if key == "LT":
+        return (float(vals.get("lt", 0.0)), True)
+    if key == "RT":
+        return (float(vals.get("rt", 0.0)), True)
+    lx = float(vals.get("lx", 0.0))
+    ly = float(vals.get("ly", 0.0))
+    rx = float(vals.get("rx", 0.0))
+    ry = float(vals.get("ry", 0.0))
+    if key == "LS_UP":
+        return (max(0.0, ly), True)
+    if key == "LS_DOWN":
+        return (max(0.0, -ly), True)
+    if key == "LS_LEFT":
+        return (max(0.0, -lx), True)
+    if key == "LS_RIGHT":
+        return (max(0.0, lx), True)
+    if key == "RS_UP":
+        return (max(0.0, ry), True)
+    if key == "RS_DOWN":
+        return (max(0.0, -ry), True)
+    if key == "RS_LEFT":
+        return (max(0.0, -rx), True)
+    if key == "RS_RIGHT":
+        return (max(0.0, rx), True)
+    return (0.0, False)
+def evaluate_mapping(m, st, vals, now):
+    """Evaluate one mapping. Mutates st (per-mapping persistent state). Returns True if the action must be active."""
+    mode = m.get("mode", "hold")
+    if mode not in ("hold", "tap", "toggle", "repeat", "threshold"):
+        mode = "hold"
+    cond = m.get("condition") or {}
+    ctype = cond.get("type", "direct")
+    if ctype not in ("direct", "threshold", "sequence"):
+        ctype = "direct"
+    try:
+        thr = float(cond.get("threshold", 0.5) or 0.5)
+    except Exception:
+        thr = 0.5
+    v, is_analog = input_state(m.get("input", "A"), vals)
+    level = thr if (is_analog and (ctype == "threshold" or mode == "threshold")) else 0.5
+    pressed = (v >= level) if is_analog else (v > 0.5)
+
+    mod = m.get("modifier", "") or ""
+    mod_ok = True
+    if mod:
+        mv, _ = input_state(mod, vals)
+        mod_ok = mv > 0.5
+
+    edge = False
+    held = False
+    if not mod_ok:
+        st["prev_pressed"] = False
+        st["seq_count"] = 0
+        st.pop("armed_at", None)
+    elif ctype == "sequence":
+        if pressed and not st.get("prev_pressed"):
+            interval = max(0.05, float(cond.get("interval_ms", 320) or 320) / 1000.0)
+            if st.get("seq_last") and (now - st["seq_last"]) <= interval:
+                st["seq_count"] = int(st.get("seq_count", 0)) + 1
+            else:
+                st["seq_count"] = 1
+            st["seq_last"] = now
+            if st["seq_count"] >= max(2, int(cond.get("count", 2) or 2)):
+                st["seq_count"] = 0
+                st["armed_at"] = now
+                edge = True
+        if st.get("armed_at") is not None and pressed:
+            held = True
+        else:
+            st.pop("armed_at", None)
+        st["prev_pressed"] = pressed
+    else:
+        held = pressed
+        edge = pressed and not st.get("prev_pressed", False)
+        st["prev_pressed"] = pressed
+
+    d = m.get("delay") or {}
+    delay_on = bool(d.get("enabled", False))
+    try:
+        dact = (int(d.get("activate_ms", 0) or 0) / 1000.0) if delay_on else 0.0
+        dde = (int(d.get("deactivate_ms", 0) or 0) / 1000.0) if delay_on else 0.0
+    except Exception:
+        dact = 0.0
+        dde = 0.0
+
+    out = False
+    if mode in ("hold", "threshold"):
+        if held:
+            st.pop("off_at", None)
+            if st.get("on_at") is None:
+                st["on_at"] = now + dact
+            out = now >= st["on_at"]
+        else:
+            st["on_at"] = None
+            if st.get("out"):
+                if st.get("off_at") is None:
+                    st["off_at"] = now + dde
+                out = now < st["off_at"]
+                if not out:
+                    st["off_at"] = None
+            else:
+                st["off_at"] = None
+        st["out"] = out
+    elif mode == "tap":
+        if edge and now >= st.get("pulse_until", 0.0):
+            st["pulse_from"] = now + dact
+            try:
+                tap_ms = int(m.get("tap_ms", 80) or 80)
+            except Exception:
+                tap_ms = 80
+            st["pulse_until"] = st["pulse_from"] + max(0.02, tap_ms / 1000.0)
+        out = st.get("pulse_from", 0.0) <= now < st.get("pulse_until", 0.0)
+        st["out"] = out
+    elif mode == "toggle":
+        if edge:
+            st["toggled"] = not st.get("toggled", False)
+            if st["toggled"]:
+                st["on_at"] = now + dact
+                st.pop("off_at", None)
+            else:
+                st["off_at"] = now + dde
+                st.pop("on_at", None)
+        if st.get("toggled"):
+            out = now >= (st.get("on_at") or 0.0)
+        else:
+            out = now < (st.get("off_at") or 0.0)
+        st["out"] = out
+    elif mode == "repeat":
+        r = m.get("repeat") or {}
+        try:
+            interval = max(0.04, int(r.get("interval_ms", 300) or 300) / 1000.0)
+            press = int(r.get("press_ms", 60) or 60) / 1000.0
+        except Exception:
+            interval = 0.3
+            press = 0.06
+        press = max(0.02, min(press, interval - 0.01))
+        continuous = bool(r.get("continuous", False))
+        if continuous:
+            if held and not st.get("cont_running"):
+                st["cont_running"] = True
+                st["pulses_left"] = 10 ** 9
+                st["pulse_next_at"] = now + dact
+            elif not held and st.get("cont_running"):
+                st["cont_running"] = False
+                st["pulses_left"] = 0
+                st["pulse_next_at"] = None
+        else:
+            running = int(st.get("pulses_left", 0) or 0) > 0 or now < st.get("pulse_until", 0.0)
+            if edge and not running:
+                try:
+                    count = int(r.get("count", 3) or 3)
+                except Exception:
+                    count = 3
+                st["pulses_left"] = max(1, min(20, count))
+                st["pulse_next_at"] = now + dact
+        if int(st.get("pulses_left", 0) or 0) > 0 and st.get("pulse_next_at") is not None and now >= st["pulse_next_at"]:
+            st["pulse_until"] = now + press
+            st["pulses_left"] = int(st["pulses_left"]) - 1
+            st["pulse_next_at"] = (now + interval) if int(st["pulses_left"]) > 0 else None
+        out = now < st.get("pulse_until", 0.0)
+        st["out"] = out
+    return out
 def find_hidhide_cli():
     for base in (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")):
         if base:
@@ -165,6 +505,8 @@ class Engine:
         self._vg = None
         self._dash_count = 0
         self._state = {}
+        self._test_lock = threading.Lock()
+        self._test_pulses = []
         self._hidhide_cli = None
         self._hidhide_cloaked = False
         self._hidhide_paths = []
@@ -237,28 +579,42 @@ class Engine:
         av = min(1.0, max(0.0, av))
         return av if value >= 0 else -av
 
-    def _button_value(self, btns, lt, rt, key):
-        mapping = {
-            "A": btns.get("A", False),
-            "B": btns.get("B", False),
-            "X": btns.get("X", False),
-            "Y": btns.get("Y", False),
-            "LB": btns.get("LEFT_SHOULDER", False),
-            "RB": btns.get("RIGHT_SHOULDER", False),
-            "L3": btns.get("LEFT_THUMB", False),
-            "R3": btns.get("RIGHT_THUMB", False),
-            "Start": btns.get("START", False),
-            "Back": btns.get("BACK", False),
-            "DPAD_UP": btns.get("DPAD_UP", False),
-            "DPAD_DOWN": btns.get("DPAD_DOWN", False),
-            "DPAD_LEFT": btns.get("DPAD_LEFT", False),
-            "DPAD_RIGHT": btns.get("DPAD_RIGHT", False),
-            "LT": lt >= 0.5,
-            "RT": rt >= 0.5,
-            "LS": False,
-            "RS": False,
-        }
-        return bool(mapping.get(key, False))
+    def test_mapping(self, m):
+        """Schedule one activation of mapping m on the virtual pad. Returns True if scheduled."""
+        if self._vg is None:
+            return False
+        now = time.perf_counter()
+        target = m.get("action", "LS")
+        mode = m.get("mode", "hold")
+        d = m.get("delay") or {}
+        dact = (int(d.get("activate_ms", 0) or 0) / 1000.0) if d.get("enabled") else 0.0
+        pulses = []
+        if mode == "repeat":
+            r = m.get("repeat") or {}
+            count = max(1, min(int(r.get("count", 3) or 3), 20))
+            interval = max(0.04, int(r.get("interval_ms", 300) or 300) / 1000.0)
+            press = max(0.02, min(int(r.get("press_ms", 60) or 60) / 1000.0, interval - 0.01))
+            for i in range(count):
+                a = now + dact + i * interval
+                pulses.append((target, a, a + press))
+        elif mode == "tap":
+            dur = max(0.02, int(m.get("tap_ms", 80) or 80) / 1000.0)
+            pulses.append((target, now + dact, now + dact + dur))
+        else:
+            pulses.append((target, now + dact, now + dact + 0.8))
+        with self._test_lock:
+            self._test_pulses.extend(pulses)
+        return True
+
+    def reset_mapping_state(self, mapping_id=None):
+        with self._lock:
+            states = self._state.get("mappings")
+            if not states:
+                return
+            if mapping_id is None:
+                states.clear()
+            else:
+                states.pop(mapping_id, None)
 
     def _hidhide_collect_paths(self):
         cli = self._hidhide_cli if hasattr(self, "_hidhide_cli") else find_hidhide_cli()
@@ -322,23 +678,12 @@ class Engine:
         self._hidhide_cloaked = False
         self._hidhide_paths = []
         self._hidhide_turned_on = False
-
     def _loop(self):
         self.status_cb("starting")
         with self._lock:
             cfg0 = json.loads(json.dumps(self.cfg))
         if cfg0.get("hidhide", False):
             self._hidhide_cloak(cfg0)
-        profile_name = self.cfg.get("profile_name", "Default")
-        active_profile = None
-        for p in self.cfg.get("profiles", []):
-            if p.get("name") == profile_name:
-                active_profile = p
-                break
-        if active_profile is None and self.cfg.get("profiles"):
-            active_profile = self.cfg["profiles"][0]
-        mappings = active_profile.get("mappings", []) if active_profile else self.cfg.get("mappings", [])
-        vgpad = None
         try:
             vgpad = self._ensure_vg()
         except Exception as e:
@@ -346,9 +691,8 @@ class Engine:
             self._hidhide_uncloak()
             return
         connected_once = False
-        mapping_state = {}
-        pressed_for_visual = set()
-        last_mapping_time = time.perf_counter()
+        states = self._state.setdefault("mappings", {})
+        last_visual = 0.0
         while self._running:
             with self._lock:
                 cfg = json.loads(json.dumps(self.cfg))
@@ -366,15 +710,17 @@ class Engine:
                     vgpad.update()
                 except Exception:
                     pass
+                for stt in states.values():
+                    stt.clear()
                 time.sleep(0.3)
                 continue
             connected_once = True
             try:
-                st = XInput.get_state(idx)
-                left, right = XInput.get_thumb_values(st)
+                xstate = XInput.get_state(idx)
+                left, right = XInput.get_thumb_values(xstate)
                 (lx, ly), (rx, ry) = left, right
-                lt, rt = XInput.get_trigger_values(st)
-                btns = XInput.get_button_values(st)
+                lt, rt = XInput.get_trigger_values(xstate)
+                btns = XInput.get_button_values(xstate)
             except Exception as e:
                 self.status_cb("reading_error", e=e)
                 time.sleep(0.2)
@@ -391,7 +737,6 @@ class Engine:
             lt_o = self._scale_axis(lt, tl.get("deadzone", 0.05), tl.get("sensitivity", 1.0), 1.0, tl.get("invert", False))
             rt_o = self._scale_axis(rt, tr.get("deadzone", 0.05), tr.get("sensitivity", 1.0), 1.0, tr.get("invert", False))
 
-            # update mapping values
             now = time.perf_counter()
             profile_name = cfg.get("profile_name", "Default")
             active_profile = None
@@ -402,199 +747,91 @@ class Engine:
             if active_profile is None and cfg.get("profiles"):
                 active_profile = cfg["profiles"][0]
             mappings = active_profile.get("mappings", []) if active_profile else cfg.get("mappings", [])
-            self._state.setdefault("mappings", {})
-            states = self._state["mappings"]
-            injected = {}
-            pressed_for_visual = set()
-            # pass through pressed buttons
-            if btns.get("A"): pressed_for_visual.add("A")
-            if btns.get("B"): pressed_for_visual.add("B")
-            if btns.get("X"): pressed_for_visual.add("X")
-            if btns.get("Y"): pressed_for_visual.add("Y")
-            # mapping eval
+
+            vals = {"buttons": {}, "lx": lx, "ly": ly, "rx": rx, "ry": ry, "lt": lt, "rt": rt}
+            for bkey, xname in XINPUT_BUTTON_NAMES.items():
+                vals["buttons"][bkey] = bool(btns.get(xname, False))
+
+            injected = set()
+            lt_inject = False
+            rt_inject = False
+            live_ids = set()
             for m in mappings:
                 if not m.get("enabled", True):
                     continue
-                mid = m.get("id", id(m))
-                st = states.setdefault(mid, {"tap": 0, "last": 0, "active": False, "toggled": False})
-                input_key = m.get("input", "")
-                trigger = m.get("trigger", {})
-                action = m.get("action", {})
-                # input pressed
-                input_pressed = False
-                if input_key == "left_stick_forward":
-                    input_pressed = ly >= cfg.get("analog", {}).get("left", {}).get("threshold", 0.78)
-                elif input_key == "LS":
-                    input_pressed = bool(btns.get("LEFT_THUMB", False))
-                elif input_key == "RS":
-                    input_pressed = bool(btns.get("RIGHT_THUMB", False))
-                elif input_key in ("LT", "RT"):
-                    input_pressed = (lt if input_key == "LT" else rt) >= 0.5
-                elif input_key == "button":
-                    input_pressed = self._button_value(btns, lt, rt, m.get("button", "A"))
-                trap = input_pressed
-                # trigger allowed
-                allowed = False
-                if trigger.get("type", "tap") == "instant":
-                    allowed = trap
-                elif trigger.get("type") == "hold":
-                    if trap:
-                        allowed = True
-                    else:
-                        allowed = False
-                elif trigger.get("type") == "tap":
-                    count = int(trigger.get("tap_count", 2))
-                    interval = float(trigger.get("interval_ms", 320)) / 1000.0
-                    if trap and not st.get("input_down", False):
-                        if st.get("last", 0) and now - st["last"] <= interval:
-                            st["tap"] += 1
+                mid = m.get("id")
+                if mid is None:
+                    mid = id(m)
+                live_ids.add(mid)
+                st = states.setdefault(mid, {})
+                try:
+                    act = evaluate_mapping(m, st, vals, now)
+                except Exception:
+                    act = False
+                if act:
+                    target = m.get("action", "")
+                    if target == "LT":
+                        lt_inject = True
+                    elif target == "RT":
+                        rt_inject = True
+                    elif target:
+                        injected.add(target)
+            for k in [k for k in states if k not in live_ids]:
+                states.pop(k, None)
+
+            with self._test_lock:
+                for p in list(self._test_pulses):
+                    tgt, a, b = p
+                    if a <= now < b:
+                        if tgt == "LT":
+                            lt_inject = True
+                        elif tgt == "RT":
+                            rt_inject = True
                         else:
-                            st["tap"] = 1
-                        st["last"] = now
-                        if st["tap"] >= count:
-                            st["tap"] = 0
-                            st["activated_at"] = now
-                            allowed = True
-                    if not trap:
-                        st["tap"] = st["tap"] if (st.get("last", 0) and now - st["last"] <= interval) else 0
-                elif trigger.get("type") == "threshold":
-                    thr = float(trigger.get("threshold", 0.78))
-                    allowed = abs(ly if input_key == "left_stick_forward" else 0.0) >= thr
-                st["input_down"] = trap
-                # activation delay
-                delay_act = float(trigger.get("delay_activate_ms", 0)) / 1000.0 if trigger.get("delay_enabled", False) else 0.0
-                delay_de = float(trigger.get("delay_deactivate_ms", 0)) / 1000.0 if trigger.get("delay_enabled", False) else 0.0
-                hold = float(trigger.get("hold_ms", 130)) / 1000.0
-                now = time.perf_counter()
-                # mode taps to inject
-                if allowed:
-                    if trigger.get("type") == "tap":
-                        st["active_until"] = now + delay_act + hold
-                        st["active_after"] = now + delay_act
-                        self._dash_count += 1
-                    else:
-                        if "active_until" not in st:
-                            st["active_until"] = now + hold
-                            st["active_after"] = now + delay_act
-                # toggle handling
-                mode = action.get("mode", "tap")
-                target = action.get("target", "LS")
-                if mode == "toggle" and allowed:
-                    st["toggled"] = not st.get("toggled", False)
-                # inject
-                is_active = st.get("active_after", 0) <= now < st.get("active_until", 0)
-                if mode == "hold":
-                    is_active = trap if trigger.get("type") in ("hold", "threshold", "instant") else is_active
-                if mode == "toggle":
-                    is_active = st.get("toggled", False)
-                if mode == "repeat":
-                    is_active = allowed
-                if is_active:
-                    injected[target] = injected.get(target, 0) or 1
-                    pressed_for_visual.add(target)
-                    if delay_de and not trap:
-                        st["active_until"] = max(st.get("active_until", now), now + delay_de)
-                if "active_until" in st and mode == "hold" and trap and delay_de > 0:
-                    st["active_until"] = max(st["active_until"], now + 0.06)
-            # write virtual
+                            injected.add(tgt)
+                    elif now - b > 0.5:
+                        self._test_pulses.remove(p)
+
+            out_buttons = dict(vals["buttons"])
+            for t in injected:
+                if t in out_buttons:
+                    out_buttons[t] = True
+            lt_out = max(lt_o, 1.0 if lt_inject else 0.0)
+            rt_out = max(rt_o, 1.0 if rt_inject else 0.0)
             try:
-                vgpad.left_joystick(int(lx_o * 32767), int(ly_o * 32767))
-                vgpad.right_joystick(int(rx_o * 32767), int(ry_o * 32767))
-                vgpad.left_trigger(int(max(0, min(1, lt_o)) * 255))
-                vgpad.right_trigger(int(max(0, min(1, rt_o)) * 255))
-                # pass-through buttons
-                for name, xbtn in {
-                    "A": vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
-                    "B": vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
-                    "X": vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
-                    "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
-                }.items():
-                    if btns.get(name, False):
+                for key, xbtn in BUTTON_MAP.items():
+                    if out_buttons.get(key, False):
                         vgpad.press_button(xbtn)
                     else:
                         vgpad.release_button(xbtn)
-                if btns.get("LEFT_SHOULDER", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER)
-                if btns.get("RIGHT_SHOULDER", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER)
-                if btns.get("START", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_START)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_START)
-                if btns.get("BACK", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK)
-                if btns.get("DPAD_UP", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP)
-                if btns.get("DPAD_DOWN", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN)
-                if btns.get("DPAD_LEFT", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT)
-                if btns.get("DPAD_RIGHT", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_RIGHT)
-                # LS/RS base mirroring
-                if btns.get("LEFT_THUMB", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB)
-                if btns.get("RIGHT_THUMB", False):
-                    vgpad.press_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB)
-                else:
-                    vgpad.release_button(vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB)
-                # injected overrides
-                target_map = {
-                    "LS": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_THUMB,
-                    "RS": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_THUMB,
-                    "A": vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
-                    "B": vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
-                    "X": vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
-                    "Y": vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
-                    "LB": vg.XUSB_BUTTON.XUSB_GAMEPAD_LEFT_SHOULDER,
-                    "RB": vg.XUSB_BUTTON.XUSB_GAMEPAD_RIGHT_SHOULDER,
-                    "START": vg.XUSB_BUTTON.XUSB_GAMEPAD_START,
-                    "BACK": vg.XUSB_BUTTON.XUSB_GAMEPAD_BACK,
-                }
-                for target, val in injected.items():
-                    if target in target_map:
-                        if val:
-                            vgpad.press_button(target_map[target])
-                        else:
-                            pass
+                vgpad.left_joystick(int(lx_o * 32767), int(ly_o * 32767))
+                vgpad.right_joystick(int(rx_o * 32767), int(ry_o * 32767))
+                vgpad.left_trigger(int(max(0.0, min(1.0, lt_out)) * 255))
+                vgpad.right_trigger(int(max(0.0, min(1.0, rt_out)) * 255))
                 vgpad.update()
             except Exception as e:
                 self.status_cb("virtual_error", e=e)
                 time.sleep(0.1)
                 continue
-            try:
-                self.visual_cb({
-                    "connected": True,
-                    "pressed": pressed_for_visual,
-                    "ly": ly,
-                    "lx": lx,
-                    "active_profile": cfg.get("profile_name", "Default"),
-                })
-            except Exception:
-                pass
+            if now - last_visual >= 0.05:
+                last_visual = now
+                try:
+                    pressed = {k for k, v in out_buttons.items() if v}
+                    if lt_out > 0.5:
+                        pressed.add("LT")
+                    if rt_out > 0.5:
+                        pressed.add("RT")
+                    self.visual_cb({
+                        "connected": True,
+                        "pressed": pressed,
+                        "buttons": dict(vals["buttons"]),
+                        "lx": lx, "ly": ly, "rx": rx, "ry": ry,
+                        "lt": lt, "rt": rt,
+                        "active_profile": cfg.get("profile_name", "Default"),
+                    })
+                except Exception:
+                    pass
             time.sleep(poll)
-
-
-class ProfileManager:
-    pass
-
-
 class RoundedCard(tk.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, bg=CARD, highlightbackground=BORDER, highlightthickness=1, **kwargs)
@@ -606,6 +843,7 @@ class App:
         self.cfg = load_config()
         self.lang = self.cfg.get("language", detect_language())
         self.profile_name = self.cfg.get("profile_name", "Default")
+        self.last_visual = None
         self.root.title("OniDash L3")
         self.root.geometry("1280x820")
         self.root.minsize(1080, 700)
@@ -636,22 +874,25 @@ class App:
         style.configure("Treeview", background=CARD, fieldbackground=CARD, foreground=TEXT, bordercolor=BORDER, rowheight=34)
         style.configure("Treeview.Heading", background=PANEL, foreground=GOLD, font=("Segoe UI", 10, "bold"))
         style.map("Treeview", background=[("selected", "#2A3446")])
+        try:
+            ico = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.ico")
+            if os.path.exists(ico):
+                self.root.iconbitmap(ico)
+        except Exception:
+            pass
 
     def _build_layout(self):
         self.root.columnconfigure(0, weight=0)
         self.root.columnconfigure(1, weight=1)
         self.root.rowconfigure(0, weight=1)
-        # sidebar
         self.sidebar = tk.Frame(self.root, bg=PANEL, width=210)
         self.sidebar.grid(row=0, column=0, sticky="nsw")
         self.sidebar.grid_propagate(False)
-        # top bar
         self.topbar = tk.Frame(self.root, bg=BG, height=56)
         self.topbar.grid(row=0, column=1, sticky="new")
         self.topbar.grid_propagate(False)
         self.content_host = tk.Frame(self.root, bg=BG)
         self.content_host.grid(row=0, column=1, sticky="nsew", pady=(56, 0))
-        # pages
         self.pages = {}
         for name in ("home", "mapping", "analog", "triggers", "profiles", "settings"):
             f = tk.Frame(self.content_host, bg=BG)
@@ -673,7 +914,7 @@ class App:
         title.pack(anchor="w", padx=18, pady=(18, 10))
         subtitle = tk.Label(self.sidebar, text=T(self.lang, "universal_controller"), bg=PANEL, fg=MUTED, font=("Segoe UI", 9))
         subtitle.pack(anchor="w", padx=18, pady=(0, 16))
-        self.status_label = tk.Label(self.sidebar, text=T(self.lang, "stopped"), bg=PANEL, fg=DANGER, font=("Segoe UI", 9, "bold"))
+        self.status_label = tk.Label(self.sidebar, text=T(self.lang, "stopped"), bg=PANEL, fg=DANGER, font=("Segoe UI", 9, "bold"), wraplength=170, justify="left")
         self.status_label.pack(anchor="w", padx=18, pady=(0, 14))
         for key, label_key in [("home", "nav_home"), ("mapping", "nav_mapping"), ("analog", "nav_analog"), ("triggers", "nav_triggers"), ("profiles", "nav_profiles"), ("settings", "nav_settings")]:
             btn = tk.Button(self.sidebar, text=T(self.lang, label_key), bg=PANEL, fg=TEXT, relief="flat", anchor="w", padx=18, pady=10,
@@ -682,7 +923,6 @@ class App:
 
     def _show_page(self, name):
         self.pages[name].tkraise()
-
     def _build_home(self, parent):
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(1, weight=1)
@@ -692,11 +932,9 @@ class App:
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         body.columnconfigure(0, weight=3)
         body.columnconfigure(1, weight=2)
-        # visual controller
         self.canvas = tk.Canvas(body, bg=CARD, highlightthickness=0, width=560, height=360)
         self.canvas.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
         self._draw_controller()
-        # info cards
         right = tk.Frame(body, bg=BG)
         right.grid(row=0, column=1, sticky="nsew")
         self.card_profile = RoundedCard(right)
@@ -712,7 +950,7 @@ class App:
         self.card_mapper = RoundedCard(right)
         self.card_mapper.pack(fill="x")
         tk.Label(self.card_mapper, text=T(self.lang, "quick_actions"), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
-        for lbl, page in [(T(self.lang, "open_mapping"), "mapping"), (T(self.lang, "edit_analogs"), "analog"), (T(self.lang, "profiles"), "profiles")]:
+        for lbl, page in [(T(self.lang, "open_mapping"), "mapping"), (T(self.lang, "edit_analogs"), "analog"), (T(self.lang, "profiles_title"), "profiles")]:
             b = tk.Button(self.card_mapper, text=lbl, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda p=page: self._show_page(p))
             b.pack(fill="x", padx=16, pady=4)
         tk.Frame(self.card_mapper, bg=CARD, height=8).pack()
@@ -720,45 +958,204 @@ class App:
     def _draw_controller(self):
         c = self.canvas
         c.delete("all")
-        # body
         c.create_oval(180, 60, 380, 300, fill="#1A202A", outline=BORDER, width=2)
         c.create_rectangle(230, 90, 330, 270, fill="#1A202A", outline=BORDER, width=0)
-        # dpad
         c.create_rectangle(210, 150, 260, 165, fill="#2A3342", outline=BORDER)
         c.create_rectangle(230, 130, 245, 180, fill="#2A3342", outline=BORDER)
-        # abxy
         c.create_oval(315, 135, 345, 165, fill="#2A3342", outline=BORDER, tags="B")
         c.create_oval(345, 165, 375, 195, fill="#2A3342", outline=BORDER, tags="A")
         c.create_oval(285, 165, 315, 195, fill="#2A3342", outline=BORDER, tags="X")
         c.create_oval(315, 195, 345, 225, fill="#2A3342", outline=BORDER, tags="Y")
-        # sticks
         c.create_oval(205, 195, 245, 235, fill="#10151D", outline=BORDER)
         c.create_oval(295, 235, 335, 275, fill="#10151D", outline=BORDER)
         c.create_text(330, 150, text="B", fill=MUTED, font=("Segoe UI", 9, "bold"))
         c.create_text(360, 180, text="A", fill=MUTED, font=("Segoe UI", 9, "bold"))
         c.create_text(300, 180, text="X", fill=MUTED, font=("Segoe UI", 9, "bold"))
         c.create_text(330, 210, text="Y", fill=MUTED, font=("Segoe UI", 9, "bold"))
-
+        c.create_text(225, 215, text="L3", fill=MUTED, font=("Segoe UI", 8, "bold"))
+        c.create_text(315, 255, text="R3", fill=MUTED, font=("Segoe UI", 8, "bold"))
     def _build_mapping(self, parent):
         parent.columnconfigure(0, weight=1)
-        parent.rowconfigure(1, weight=1)
+        parent.rowconfigure(2, weight=1)
         header = tk.Label(parent, text=T(self.lang, "mapping_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         tk.Label(parent, text=T(self.lang, "desc_mapping"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
-        for text, cmd in [(T(self.lang, "add_mapping"), self._add_mapping), (T(self.lang, "edit"), self._edit_mapping), (T(self.lang, "duplicate"), self._duplicate_mapping), (T(self.lang, "remove"), self._remove_mapping)]:
-            tk.Button(toolbar, text=text, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
-        self.map_tree = ttk.Treeview(parent, columns=("input", "action", "mode", "configure"), show="headings", height=16)
-        for col, key in (("input", "physical_input"), ("action", "assigned_action"), ("mode", "mode"), ("configure", "configure")):
-            self.map_tree.heading(col, text=T(self.lang, key))
-            self.map_tree.column(col, width=260 if col in ("input", "action") else 160)
-        self.map_tree.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 16))
-        parent.rowconfigure(2, weight=1)
-        btn_refresh = tk.Button(parent, text=T(self.lang, "refresh"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._refresh_mappings)
-        btn_refresh.grid(row=3, column=0, sticky="w", padx=24, pady=(0, 16))
+        for key, cmd in (("add_mapping", self._add_mapping), ("edit", self._edit_mapping), ("map_toggle", self._toggle_mapping), ("duplicate", self._duplicate_mapping), ("remove", self._remove_mapping)):
+            tk.Button(toolbar, text=T(self.lang, key), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
+        self.map_tree = ttk.Treeview(parent, columns=("summary", "status"), show="headings", height=16)
+        self.map_tree.heading("summary", text=T(self.lang, "map_summary"))
+        self.map_tree.heading("status", text=T(self.lang, "map_status"))
+        self.map_tree.column("summary", width=780, anchor="w")
+        self.map_tree.column("status", width=120, anchor="center")
+        self.map_tree.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 6))
+        self.map_tree.bind("<Double-1>", lambda e: self._edit_mapping())
+        self.map_tree.tag_configure("inactive", foreground=MUTED)
+        tk.Label(parent, text=T(self.lang, "map_hint"), bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=3, column=0, sticky="w", padx=24, pady=(0, 16))
         self._refresh_mappings()
 
+    def _active_profile(self):
+        name = self.cfg.get("profile_name", "Default")
+        profiles = self.cfg.setdefault("profiles", [])
+        if not profiles:
+            profiles.append({"name": name, "description": "", "mappings": []})
+        for p in profiles:
+            if p.get("name") == name:
+                return p
+        self.cfg["profile_name"] = profiles[0].get("name", "Default")
+        return profiles[0]
+
+    def _current_mappings(self):
+        return self._active_profile().setdefault("mappings", [])
+
+    def _sync_mappings(self):
+        self.cfg["mappings"] = [json.loads(json.dumps(m)) for m in self._current_mappings()]
+        save_config(self.cfg)
+        self.engine.set_config(self.cfg)
+
+    def _refresh_mappings(self, select_idx=None):
+        for i in self.map_tree.get_children():
+            self.map_tree.delete(i)
+        mappings = self._current_mappings()
+        if not mappings:
+            self.map_tree.insert("", "end", iid="__none", values=(T(self.lang, "map_none"), ""))
+            return
+        for idx, m in enumerate(mappings):
+            enabled = m.get("enabled", True)
+            self.map_tree.insert("", "end", iid=str(idx),
+                                 values=(self._mapping_summary(m), T(self.lang, "map_active") if enabled else T(self.lang, "map_inactive")),
+                                 tags=() if enabled else ("inactive",))
+        if select_idx is not None and 0 <= select_idx < len(mappings):
+            try:
+                self.map_tree.selection_set(str(select_idx))
+                self.map_tree.see(str(select_idx))
+            except Exception:
+                pass
+
+    def _selected_mapping(self):
+        sel = self.map_tree.selection()
+        if not sel or sel[0] == "__none":
+            return None
+        try:
+            idx = int(sel[0])
+        except Exception:
+            return None
+        if 0 <= idx < len(self._current_mappings()):
+            return idx
+        return None
+
+    def _mapping_summary(self, m):
+        lang = self.lang
+        inp = INPUT_LABELS.get(m.get("input", ""), m.get("input", ""))
+        act = ACTION_LABELS.get(m.get("action", ""), m.get("action", ""))
+        parts = ["%s %s %s" % (inp, T(lang, "map_to"), act)]
+        cond = m.get("condition") or {}
+        mode = m.get("mode", "hold")
+        if mode == "hold":
+            parts.append(T(lang, "sum_hold"))
+        elif mode == "tap":
+            parts.append(T(lang, "sum_tap", ms=m.get("tap_ms", 80)))
+        elif mode == "toggle":
+            parts.append(T(lang, "sum_toggle"))
+        elif mode == "repeat":
+            r = m.get("repeat") or {}
+            parts.append(T(lang, "sum_repeat_cont") if r.get("continuous") else T(lang, "sum_repeat", n=r.get("count", 3)))
+            parts.append(T(lang, "sum_interval", ms=r.get("interval_ms", 300)))
+            parts.append(T(lang, "sum_press", ms=r.get("press_ms", 60)))
+        elif mode == "threshold":
+            try:
+                pct = int(round(float(cond.get("threshold", 0.5) or 0.5) * 100))
+            except Exception:
+                pct = 50
+            parts.append(T(lang, "sum_threshold", pct=pct))
+        if cond.get("type") == "sequence":
+            parts.append(T(lang, "sum_seq", n=cond.get("count", 2), ms=cond.get("interval_ms", 320)))
+        elif cond.get("type") == "threshold" and mode != "threshold":
+            try:
+                pct = int(round(float(cond.get("threshold", 0.5) or 0.5) * 100))
+            except Exception:
+                pct = 50
+            parts.append(T(lang, "sum_threshold", pct=pct))
+        if m.get("modifier"):
+            parts.append(T(lang, "sum_modifier", btn=INPUT_LABELS.get(m["modifier"], m["modifier"])))
+        d = m.get("delay") or {}
+        if d.get("enabled"):
+            parts.append(T(lang, "sum_delays", a=d.get("activate_ms", 0), d=d.get("deactivate_ms", 0)))
+        return " \u00b7 ".join(parts)
+    def _add_mapping(self):
+        MappingEditor(self, None, on_save=self._store_new_mapping)
+
+    def _store_new_mapping(self, m):
+        mappings = self._current_mappings()
+        m["id"] = self._next_mapping_id(mappings)
+        mappings.append(m)
+        self._sync_mappings()
+        self._refresh_mappings(len(mappings) - 1)
+        self.engine.reset_mapping_state()
+
+    def _next_mapping_id(self, mappings):
+        used = set()
+        for x in mappings:
+            try:
+                used.add(int(x.get("id", 0) or 0))
+            except Exception:
+                pass
+        nid = 1
+        while nid in used:
+            nid += 1
+        return nid
+
+    def _edit_mapping(self):
+        idx = self._selected_mapping()
+        if idx is None:
+            return
+        m = self._current_mappings()[idx]
+        MappingEditor(self, m, on_save=lambda nm: self._store_edited_mapping(idx, nm))
+
+    def _store_edited_mapping(self, idx, m):
+        mappings = self._current_mappings()
+        if not (0 <= idx < len(mappings)):
+            return
+        old = mappings[idx]
+        m["id"] = old.get("id", m.get("id"))
+        m["enabled"] = old.get("enabled", True)
+        mappings[idx] = m
+        self._sync_mappings()
+        self._refresh_mappings(idx)
+        self.engine.reset_mapping_state(m.get("id"))
+
+    def _toggle_mapping(self):
+        idx = self._selected_mapping()
+        if idx is None:
+            return
+        m = self._current_mappings()[idx]
+        m["enabled"] = not m.get("enabled", True)
+        self._sync_mappings()
+        self._refresh_mappings(idx)
+        self.engine.reset_mapping_state(m.get("id"))
+
+    def _duplicate_mapping(self):
+        idx = self._selected_mapping()
+        if idx is None:
+            return
+        src = self._current_mappings()[idx]
+        new = json.loads(json.dumps(src))
+        mappings = self._current_mappings()
+        new["id"] = self._next_mapping_id(mappings)
+        mappings.append(new)
+        self._sync_mappings()
+        self._refresh_mappings(len(mappings) - 1)
+
+    def _remove_mapping(self):
+        idx = self._selected_mapping()
+        if idx is None:
+            return
+        del self._current_mappings()[idx]
+        self._sync_mappings()
+        remaining = len(self._current_mappings())
+        self._refresh_mappings(min(idx, remaining - 1) if remaining else None)
+        self.engine.reset_mapping_state()
     def _build_analog(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "analogs_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
@@ -768,26 +1165,51 @@ class App:
         container.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         container.columnconfigure(0, weight=1)
         container.columnconfigure(1, weight=1)
-        for side, col in (("left", 0), ("right", 1)):
+        self.analog_value_labels = {}
+        for side, col, title in (("left", 0, "Left Stick (L3)"), ("right", 1, "Right Stick (R3)")):
             card = RoundedCard(container)
             card.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 8, 0 if col == 1 else 8))
-            tk.Label(card, text=side.title() + " Stick", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+            tk.Label(card, text=title, bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
             cfg = self.cfg["analog"][side]
-            for label, key, frm, to in [(T(self.lang, "deadzone") + " x1/x100", "deadzone", 0, 50), (T(self.lang, "sensitivity") + " x100", "sensitivity", 25, 250), (T(self.lang, "curve") + " x100", "curve", 25, 300), (T(self.lang, "threshold") + " x100", "threshold", 25, 98)]:
+            specs = [
+                (T(self.lang, "deadzone") + " (0-50)", "deadzone", 0, 50),
+                (T(self.lang, "sensitivity") + " (25-250)", "sensitivity", 25, 250),
+                (T(self.lang, "curve") + " (25-300)", "curve", 25, 300),
+                (T(self.lang, "threshold") + " (25-98)", "threshold", 25, 98),
+            ]
+            for label, key, frm, to in specs:
                 row = tk.Frame(card, bg=CARD)
                 row.pack(fill="x", padx=16, pady=4)
-                tk.Label(row, text=label, bg=CARD, fg=TEXT, width=20, anchor="w").pack(side="left")
-                var = tk.IntVar(value=int(cfg[key] * (1 if key == "deadzone" or key == "threshold" else (100 if key in ("sensitivity", "curve") else 1))))
-                # careful: keep value usable
-                sc = ttk.Scale(row, from_=frm, to=to, orient="horizontal", variable=var)
-                sc.pack(side="left", fill="x", expand=True, padx=8)
-                val = tk.Label(row, text=str(cfg[key]), bg=CARD, fg=MUTED, width=6)
-                val.pack(side="right")
-                cfg[key] = cfg[key]
+                tk.Label(row, text=label, bg=CARD, fg=TEXT, width=24, anchor="w").pack(side="left")
+                val_label = tk.Label(row, text="", bg=CARD, fg=MUTED, width=5)
+                val_label.pack(side="right")
+                scale = ttk.Scale(row, from_=frm, to=to, orient="horizontal")
+                scale.pack(side="left", fill="x", expand=True, padx=8)
+                try:
+                    cur = float(cfg.get(key, 0.08 if key == "deadzone" else 1.0)) * 100.0
+                except Exception:
+                    cur = float(frm)
+                scale.set(cur)
+                val_label.config(text=str(int(round(cur))))
+                self.analog_value_labels[(side, key)] = val_label
+                scale.configure(command=lambda v, s=side, k=key, lab=val_label: self._set_analog_scale(s, k, v, lab))
             for opt in ("invert_x", "invert_y"):
-                var = tk.BooleanVar(value=cfg.get(opt, False))
-                tk.Checkbutton(card, text=opt.replace("_", " ").title(), variable=var, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda s=side, o=opt, v=var: self._set_analog(s, o, v.get())).pack(anchor="w", padx=16, pady=2)
+                var = tk.BooleanVar(value=bool(cfg.get(opt, False)))
+                tk.Checkbutton(card, text="%s %s" % (T(self.lang, "invert"), opt.split("_")[1].upper()), variable=var, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD,
+                               command=lambda s=side, o=opt, v=var: self._set_analog(s, o, v.get())).pack(anchor="w", padx=16, pady=2)
         tk.Label(container, text=T(self.lang, "changes_apply"), bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=1, column=0, columnspan=2, sticky="w", pady=(12, 0))
+
+    def _set_analog_scale(self, side, key, value, label):
+        try:
+            fv = float(value)
+        except Exception:
+            return
+        self.cfg["analog"][side][key] = fv / 100.0
+        try:
+            label.config(text=str(int(round(fv))))
+        except Exception:
+            pass
+        save_config(self.cfg)
 
     def _set_analog(self, side, key, value):
         self.cfg["analog"][side][key] = value
@@ -800,27 +1222,45 @@ class App:
         tk.Label(parent, text=T(self.lang, "desc_triggers"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
-        for side in ("left", "right"):
+        for side, title in (("left", "Left Trigger (LT)"), ("right", "Right Trigger (RT)")):
             card = RoundedCard(body)
             card.pack(fill="x", pady=(0, 12))
-            tk.Label(card, text=side.title() + " Trigger", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+            tk.Label(card, text=title, bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
             cfg = self.cfg["triggers"][side]
-            for label, key in (((T(self.lang, "deadzone"), "deadzone"), (T(self.lang, "sensitivity"), "sensitivity"))):
+            for label, key, frm, to in ((T(self.lang, "deadzone") + " (0-100)", "deadzone", 0, 100), (T(self.lang, "sensitivity") + " (25-250)", "sensitivity", 25, 250)):
                 row = tk.Frame(card, bg=CARD)
                 row.pack(fill="x", padx=16, pady=4)
-                tk.Label(row, text=label, bg=CARD, fg=TEXT, width=16, anchor="w").pack(side="left")
-                var = tk.IntVar(value=int(cfg.get(key, 0.05) * 100))
-                scale = ttk.Scale(row, from_=0 if key == "deadzone" else 25, to=100 if key == "deadzone" else 250, orient="horizontal", variable=var)
+                tk.Label(row, text=label, bg=CARD, fg=TEXT, width=24, anchor="w").pack(side="left")
+                val_label = tk.Label(row, text="", bg=CARD, fg=MUTED, width=5)
+                val_label.pack(side="right")
+                scale = ttk.Scale(row, from_=frm, to=to, orient="horizontal")
                 scale.pack(side="left", fill="x", expand=True, padx=8)
-                tk.Label(row, text=str(var.get()), bg=CARD, fg=MUTED, width=4).pack(side="right")
-                scale.configure(command=lambda v, s=side, k=key, va=var, lab=None: self._set_trigger(s, k, va.get() / (100.0 if k == "deadzone" else 100.0)))
-            inv = tk.BooleanVar(value=cfg.get("invert", False))
-            tk.Checkbutton(card, text=T(self.lang, "invert"), variable=inv, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda s=side, v=inv: self._set_trigger(s, "invert", v.get())).pack(anchor="w", padx=16, pady=6)
+                try:
+                    cur = float(cfg.get(key, 0.05)) * 100.0
+                except Exception:
+                    cur = float(frm)
+                scale.set(cur)
+                val_label.config(text=str(int(round(cur))))
+                scale.configure(command=lambda v, s=side, k=key, lab=val_label: self._set_trigger_scale(s, k, v, lab))
+            inv = tk.BooleanVar(value=bool(cfg.get("invert", False)))
+            tk.Checkbutton(card, text=T(self.lang, "invert"), variable=inv, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD,
+                           command=lambda s=side, v=inv: self._set_trigger(s, "invert", v.get())).pack(anchor="w", padx=16, pady=6)
+
+    def _set_trigger_scale(self, side, key, value, label):
+        try:
+            fv = float(value)
+        except Exception:
+            return
+        self.cfg["triggers"][side][key] = fv / 100.0
+        try:
+            label.config(text=str(int(round(fv))))
+        except Exception:
+            pass
+        save_config(self.cfg)
 
     def _set_trigger(self, side, key, value):
         self.cfg["triggers"][side][key] = value
         save_config(self.cfg)
-
     def _build_profiles(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "profiles_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
@@ -828,8 +1268,8 @@ class App:
         tk.Label(parent, text=T(self.lang, "desc_profiles"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
-        for text, cmd in [("New", self._new_profile), ("Duplicate", self._duplicate_profile), ("Import", self._import_profile), ("Export", self._export_profile)]:
-            tk.Button(toolbar, text=text, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
+        for key, cmd in (("profile_new", self._new_profile), ("duplicate", self._duplicate_profile), ("profile_import", self._import_profile), ("profile_export", self._export_profile)):
+            tk.Button(toolbar, text=T(self.lang, key), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
         self.profile_cards = tk.Frame(parent, bg=BG)
         self.profile_cards.grid(row=2, column=0, sticky="nsew", padx=24, pady=10)
         parent.rowconfigure(2, weight=1)
@@ -841,7 +1281,9 @@ class App:
         for prof in self.cfg.get("profiles", []):
             card = RoundedCard(self.profile_cards)
             card.pack(fill="x", pady=(0, 10))
-            tk.Label(card, text=prof.get("name", "Profile"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 2))
+            active = prof.get("name") == self.cfg.get("profile_name")
+            title = prof.get("name", "Profile") + (" \u2713" if active else "")
+            tk.Label(card, text=title, bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 2))
             tk.Label(card, text=prof.get("description", ""), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(0, 8))
             row = tk.Frame(card, bg=CARD)
             row.pack(fill="x", padx=16, pady=(0, 12))
@@ -852,41 +1294,74 @@ class App:
     def _use_profile(self, prof):
         self.cfg["profile_name"] = prof.get("name")
         self.profile_name = prof.get("name")
-        self.profile_value.config(text=self.profile_name)
-        save_config(self.cfg)
+        try:
+            self.profile_value.config(text=self.profile_name)
+        except Exception:
+            pass
+        self._sync_mappings()
+        self._refresh_profiles()
+        self._refresh_mappings()
+        self.engine.reset_mapping_state()
 
     def _new_profile(self):
-        name = "Profile " + str(len(self.cfg.get("profiles", [])) + 1)
-        prof = {"name": name, "description": "New profile", "mappings": []}
-        self.cfg.setdefault("profiles", []).append(prof)
+        profiles = self.cfg.setdefault("profiles", [])
+        name = T(self.lang, "profile_new_name", n=len(profiles) + 1)
+        existing = {p.get("name") for p in profiles}
+        n = len(profiles) + 1
+        while name in existing:
+            n += 1
+            name = T(self.lang, "profile_new_name", n=n)
+        prof = {"name": name, "description": T(self.lang, "profile_new_desc"), "mappings": []}
+        profiles.append(prof)
         self._use_profile(prof)
-        self._refresh_profiles()
 
     def _duplicate_profile(self):
-        if not self.cfg.get("profiles"):
+        profiles = self.cfg.get("profiles", [])
+        if not profiles:
             return
-        src = self.cfg["profiles"][-1]
-        prof = {"name": src.get("name", "Profile") + " Copy", "description": src.get("description", ""), "mappings": [dict(m) for m in src.get("mappings", [])]}
-        self.cfg["profiles"].append(prof)
+        src = None
+        for p in profiles:
+            if p.get("name") == self.cfg.get("profile_name"):
+                src = p
+                break
+        if src is None:
+            src = profiles[-1]
+        name = "%s (%s)" % (src.get("name", "Profile"), T(self.lang, "profile_copy"))
+        prof = {"name": name, "description": src.get("description", ""), "mappings": json.loads(json.dumps(src.get("mappings", [])))}
+        profiles.append(prof)
         self._refresh_profiles()
+        save_config(self.cfg)
 
     def _edit_profile(self, prof):
-        name = tk.simpledialog.askstring("Edit Profile", "Name", initialvalue=prof.get("name", ""), parent=self.root)
+        name = simpledialog.askstring(T(self.lang, "profile_edit_title"), T(self.lang, "profile_name"), initialvalue=prof.get("name", ""), parent=self.root)
         if name:
             prof["name"] = name
-            desc = tk.simpledialog.askstring("Edit Profile", "Description", initialvalue=prof.get("description", ""), parent=self.root)
+            desc = simpledialog.askstring(T(self.lang, "profile_edit_title"), T(self.lang, "profile_desc"), initialvalue=prof.get("description", ""), parent=self.root)
             if desc is not None:
                 prof["description"] = desc
+            if self.cfg.get("profile_name") != name and self.cfg.get("profile_name") in [p.get("name") for p in self.cfg.get("profiles", [])]:
+                pass
             self._refresh_profiles()
             save_config(self.cfg)
 
     def _delete_profile(self, prof):
         if len(self.cfg.get("profiles", [])) <= 1:
-            messagebox.showwarning("Profiles", "Cannot delete the last profile.")
+            messagebox.showwarning(T(self.lang, "profiles_title"), T(self.lang, "cannot_delete_last_profile"))
             return
+        was_active = prof.get("name") == self.cfg.get("profile_name")
         self.cfg["profiles"] = [p for p in self.cfg["profiles"] if p is not prof]
+        if was_active and self.cfg["profiles"]:
+            self.cfg["profile_name"] = self.cfg["profiles"][0].get("name", "Default")
+            self.profile_name = self.cfg["profile_name"]
+            try:
+                self.profile_value.config(text=self.profile_name)
+            except Exception:
+                pass
+        self.cfg["mappings"] = [json.loads(json.dumps(m)) for m in self._current_mappings()]
         self._refresh_profiles()
+        self._refresh_mappings()
         save_config(self.cfg)
+        self.engine.set_config(self.cfg)
 
     def _import_profile(self):
         path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
@@ -896,21 +1371,16 @@ class App:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict) or "name" not in data or "mappings" not in data:
-                raise ValueError("Invalid profile")
+                raise ValueError(T(self.lang, "invalid_profile"))
+            data["mappings"] = [normalize_mapping(m) for m in data.get("mappings", [])]
             self.cfg.setdefault("profiles", []).append(data)
             self._refresh_profiles()
             save_config(self.cfg)
         except Exception as e:
-            messagebox.showerror("Import", str(e))
+            messagebox.showerror(T(self.lang, "profile_import"), T(self.lang, "import_error", e=e))
 
     def _export_profile(self):
-        profile = None
-        for p in self.cfg.get("profiles", []):
-            if p.get("name") == self.cfg.get("profile_name", ""):
-                profile = p
-                break
-        if profile is None and self.cfg.get("profiles"):
-            profile = self.cfg["profiles"][0]
+        profile = self._active_profile()
         if not profile:
             return
         path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
@@ -920,8 +1390,7 @@ class App:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(profile, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            messagebox.showerror("Export", str(e))
-
+            messagebox.showerror(T(self.lang, "profile_export"), T(self.lang, "export_error", e=e))
     def _build_settings(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "settings_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
@@ -929,7 +1398,6 @@ class App:
         tk.Label(parent, text=T(self.lang, "desc_settings"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
-        # language
         L1 = RoundedCard(body)
         L1.pack(fill="x", pady=(0, 12))
         tk.Label(L1, text=T(self.lang, "language"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
@@ -937,24 +1405,22 @@ class App:
         lang.set({"pt": "Portugues", "en": "English", "es": "Espanol"}.get(self.lang, "Portugues"))
         lang.pack(anchor="w", padx=16, pady=(0, 12))
         lang.bind("<<ComboboxSelected>>", lambda e: self._set_setting("language", {"Portugues": "pt", "English": "en", "Espanol": "es"}.get(lang.get(), self.lang)))
-        # controller
         C1 = RoundedCard(body)
         C1.pack(fill="x", pady=(0, 12))
         tk.Label(C1, text=T(self.lang, "controller_and_virtual"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
         dev_row = tk.Frame(C1, bg=CARD)
         dev_row.pack(fill="x", padx=16, pady=4)
-        tk.Label(dev_row, text="XInput Slot", bg=CARD, fg=TEXT).pack(side="left")
+        tk.Label(dev_row, text=T(self.lang, "xinput_slot"), bg=CARD, fg=TEXT).pack(side="left")
         sc = ttk.Spinbox(dev_row, from_=0, to=3, width=6)
         sc.set(self.cfg.get("controller_index", 0))
         sc.pack(side="right")
-        sc.bind("<FocusOut>", lambda e: self._set_setting("controller_index", int(sc.get())))
+        sc.bind("<FocusOut>", lambda e: self._set_setting("controller_index", int(sc.get() or 0)))
         vc = tk.BooleanVar(value=self.cfg.get("virtual_controller", True))
-        tk.Checkbutton(C1, text=T(self.lang, "create_virtual"), variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Checkbutton(C1, text=T(self.lang, "create_virtual"), variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
         hh = tk.BooleanVar(value=self.cfg.get("hidhide", False))
-        tk.Checkbutton(C1, text=T(self.lang, "use_hidhide"), variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("hidhide", hh.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Checkbutton(C1, text=T(self.lang, "use_hidhide"), variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("hidhide", hh.get())).pack(anchor="w", padx=16, pady=4)
         st = tk.BooleanVar(value=self.cfg.get("startup", False))
-        tk.Checkbutton(C1, text=T(self.lang, "start_with_app"), variable=st, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("startup", st.get())).pack(anchor="w", padx=16, pady=(4, 12))
-        # diagnostics
+        tk.Checkbutton(C1, text=T(self.lang, "start_with_app"), variable=st, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("startup", st.get())).pack(anchor="w", padx=16, pady=(4, 12))
         D1 = RoundedCard(body)
         D1.pack(fill="x", pady=(0, 12))
         tk.Label(D1, text=T(self.lang, "diagnostics"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
@@ -962,7 +1428,6 @@ class App:
         tk.Button(D1, text=T(self.lang, "save_settings"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda: save_config(self.cfg)).pack(anchor="w", padx=16, pady=(4, 12))
 
     def _set_setting(self, key, value):
-        old_lang = self.lang
         self.cfg[key] = value
         save_config(self.cfg)
         self.engine.set_config(self.cfg)
@@ -973,70 +1438,11 @@ class App:
             self._build_style()
             self._build_layout()
             self.engine.status_cb = self._status_callback
-        else:
-            pass
-
-    def _add_mapping(self):
-        mappings = self.cfg.setdefault("mappings", [])
-        mappings.append({"id": len(mappings)+1, "enabled": True, "name": "New Mapping", "input": "A", "trigger": {"type": "tap", "tap_count": 2, "interval_ms": 300, "threshold": 0.78, "hold_ms": 130, "delay_enabled": False, "delay_activate_ms": 0, "delay_deactivate_ms": 0}, "action": {"type": "button", "target": "A", "mode": "hold"}})
-        save_config(self.cfg)
-        self._refresh_mappings()
-
-    def _edit_mapping(self):
-        item = self.map_tree.selection()
-        if not item:
-            return
-        idx = int(item[0])
-        mapping = self.cfg.get("mappings", [])[idx]
-        name = tk.simpledialog.askstring("Edit", "Name", initialvalue=mapping.get("name", ""), parent=self.root)
-        if name is not None:
-            mapping["name"] = name
-            inp = tk.simpledialog.askstring("Edit", "Input (A,B,X,Y,LS,RS,LT,RT,LS_forward,etc)", initialvalue=mapping.get("input", "A"), parent=self.root)
-            if inp is not None:
-                mapping["input"] = inp
-            target = tk.simpledialog.askstring("Edit", "Action target (A,B,X,Y,LS,RS,LB,RB,START,BACK)", initialvalue=mapping.get("action", {}).get("target", "A"), parent=self.root)
-            if target is not None:
-                mapping.setdefault("action", {})["target"] = target
-            mode = tk.simpledialog.askstring("Edit", "Mode (hold/tap/toggle/repeat)", initialvalue=mapping.get("action", {}).get("mode", "hold"), parent=self.root)
-            if mode is not None:
-                mapping["action"]["mode"] = mode
-            save_config(self.cfg)
-            self._refresh_mappings()
-
-    def _duplicate_mapping(self):
-        item = self.map_tree.selection()
-        if not item:
-            return
-        idx = int(item[0])
-        src = self.cfg.get("mappings", [])[idx]
-        new = {k: (v if not isinstance(v, (dict, list)) else ([x if not isinstance(x, dict) else dict(x) for x in v] if isinstance(v, list) else dict(v))) for k, v in src.items()}
-        new["id"] = len(self.cfg.get("mappings", [])) + 1
-        new["name"] = src.get("name", "Mapping") + " Copy"
-        self.cfg.setdefault("mappings", []).append(new)
-        save_config(self.cfg)
-        self._refresh_mappings()
-
-    def _remove_mapping(self):
-        item = self.map_tree.selection()
-        if not item:
-            return
-        idx = int(item[0])
-        del self.cfg["mappings"][idx]
-        save_config(self.cfg)
-        self._refresh_mappings()
-
-    def _refresh_mappings(self):
-        for i in self.map_tree.get_children():
-            self.map_tree.delete(i)
-        for idx, m in enumerate(self.cfg.get("mappings", [])):
-            self.map_tree.insert("", "end", iid=str(idx), values=(m.get("input", ""), m.get("name", ""), m.get("action", {}).get("mode", ""), "Edit"))
 
     def _status_callback(self, key, **kw):
-        text = T(self.lang, key, **kw) if key in T(self.lang, key) or True else key
         try:
-            if isinstance(key, str) and key in ("starting", "waiting_real", "real_disconnected", "reading_error", "virtual_error", "stopped", "active_slot", "running_hold", "running_dash", "error_virtual", "hidhide_not_found", "hidhide_no_device", "hidhide_cloaked", "hidhide_error"):
-                text = T(self.lang, key, **kw)
-            else:
+            text = T(self.lang, key, **kw)
+            if text == key:
                 text = str(key)
             self.root.after(0, lambda t=text: self.status_label.config(text=t))
         except Exception:
@@ -1049,8 +1455,12 @@ class App:
             pass
 
     def _update_visual(self, state):
-        self.conn_value.config(text=T(self.lang, "status_connected") if state.get("connected") else T(self.lang, "status_disconnected"))
-        self.profile_value.config(text=state.get("active_profile", self.profile_name))
+        self.last_visual = state
+        try:
+            self.conn_value.config(text=T(self.lang, "status_connected") if state.get("connected") else T(self.lang, "status_disconnected"))
+            self.profile_value.config(text=state.get("active_profile", self.profile_name))
+        except Exception:
+            pass
         pressed = state.get("pressed", set())
         for button in ("A", "B", "X", "Y"):
             color = GOLD if button in pressed else "#2A3342"
@@ -1060,22 +1470,404 @@ class App:
                 pass
 
     def _poll_visual(self):
-        # placeholder for periodic updates
         self.root.after(2000, self._poll_visual)
 
     def on_close(self):
         self.engine.stop()
         self.root.destroy()
+class MappingEditor(tk.Toplevel):
+    MODE_KEYS = ["hold", "tap", "toggle", "repeat", "threshold"]
+
+    def __init__(self, app, mapping=None, on_save=None):
+        super().__init__(app.root)
+        self.app = app
+        self.lang = app.lang
+        self.on_save = on_save
+        self.editing = mapping is not None
+        self.src = normalize_mapping(mapping) if mapping else default_mapping()
+        self.detecting = False
+        self.title(T(self.lang, "editor_edit") if self.editing else T(self.lang, "editor_new"))
+        self.configure(bg=BG)
+        self.geometry("720x670")
+        self.minsize(680, 620)
+        self.transient(app.root)
+        self._vars()
+        self._build()
+        self._load()
+        self._refresh_editor()
+        self.protocol("WM_DELETE_WINDOW", self._cancel)
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
+    def _vars(self):
+        self.var_input = tk.StringVar()
+        self.var_action = tk.StringVar()
+        self.var_cond = tk.StringVar()
+        self.var_mode = tk.StringVar()
+        self.var_modifier = tk.StringVar()
+        self.var_tap = tk.StringVar()
+        self.var_rep_count = tk.StringVar()
+        self.var_rep_interval = tk.StringVar()
+        self.var_rep_press = tk.StringVar()
+        self.var_continuous = tk.BooleanVar()
+        self.var_threshold = tk.DoubleVar()
+        self.var_seq_count = tk.StringVar()
+        self.var_seq_interval = tk.StringVar()
+        self.var_delay_enabled = tk.BooleanVar()
+        self.var_delay_act = tk.StringVar()
+        self.var_delay_deact = tk.StringVar()
+
+    def _section(self, parent, title_key, row, col, pady=(0, 10), pad=(4, 4)):
+        card = RoundedCard(parent)
+        card.grid(row=row, column=col, sticky="nsew", pady=pady, padx=pad)
+        tk.Label(card, text=T(self.lang, title_key), bg=CARD, fg=GOLD, font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=14, pady=(10, 4))
+        return card
+
+    def _spin(self, parent, var, frm, to, step=1):
+        sp = ttk.Spinbox(parent, from_=frm, to=to, increment=step, textvariable=var, width=7)
+        return sp
+
+    def _build(self):
+        body = tk.Frame(self, bg=BG)
+        body.pack(fill="both", expand=True, padx=10, pady=10)
+        body.columnconfigure(0, weight=1)
+        body.columnconfigure(1, weight=1)
+        # ---------- input ----------
+        card = self._section(body, "editor_input", 0, 0)
+        self.cb_input = ttk.Combobox(card, textvariable=self.var_input, state="readonly", width=28, values=[INPUT_LABELS[k] for k in ALL_INPUTS])
+        self.cb_input.pack(anchor="w", padx=14)
+        self.cb_input.bind("<<ComboboxSelected>>", lambda e: self._refresh_editor())
+        tk.Label(card, text=T(self.lang, "editor_input_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left").pack(anchor="w", padx=14, pady=(6, 2))
+        self.btn_detect = tk.Button(card, text=T(self.lang, "editor_detect"), bg=PANEL, fg=TEXT, relief="flat", padx=10, pady=5, command=self._toggle_detect)
+        self.btn_detect.pack(anchor="w", padx=14, pady=(4, 2))
+        self.lbl_detect = tk.Label(card, text="", bg=CARD, fg=GOLD, font=("Segoe UI", 9, "bold"), wraplength=300, justify="left")
+        self.lbl_detect.pack(anchor="w", padx=14, pady=(0, 10))
+        # ---------- action ----------
+        card = self._section(body, "editor_action", 1, 0)
+        self.cb_action = ttk.Combobox(card, textvariable=self.var_action, state="readonly", width=28, values=[ACTION_LABELS[k] for k in ACTION_TARGETS])
+        self.cb_action.pack(anchor="w", padx=14)
+        tk.Label(card, text=T(self.lang, "editor_action_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left").pack(anchor="w", padx=14, pady=(6, 10))
+        # ---------- condition ----------
+        card = self._section(body, "editor_condition", 2, 0)
+        self.cb_cond = ttk.Combobox(card, textvariable=self.var_cond, state="readonly", width=28)
+        self.cb_cond.pack(anchor="w", padx=14)
+        self.cb_cond.bind("<<ComboboxSelected>>", lambda e: self._refresh_editor())
+        self.lbl_cond_desc = tk.Label(card, text="", bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left")
+        self.lbl_cond_desc.pack(anchor="w", padx=14, pady=(4, 2))
+        self.frame_seq = tk.Frame(card, bg=CARD)
+        tk.Label(self.frame_seq, text=T(self.lang, "editor_seq_count"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", pady=2)
+        self.sp_seq_count = self._spin(self.frame_seq, self.var_seq_count, 2, 5)
+        self.sp_seq_count.grid(row=0, column=1, padx=(8, 0))
+        tk.Label(self.frame_seq, text=T(self.lang, "editor_seq_interval"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", pady=2)
+        self.sp_seq_interval = self._spin(self.frame_seq, self.var_seq_interval, 50, 2000, 10)
+        self.sp_seq_interval.grid(row=1, column=1, padx=(8, 0))
+        tk.Label(self.frame_seq, text=T(self.lang, "editor_seq_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=290, justify="left").grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        # ---------- modifier ----------
+        card = self._section(body, "editor_modifier", 3, 0)
+        self.cb_modifier = ttk.Combobox(card, textvariable=self.var_modifier, state="readonly", width=28)
+        self.cb_modifier.pack(anchor="w", padx=14)
+        tk.Label(card, text=T(self.lang, "editor_modifier_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left").pack(anchor="w", padx=14, pady=(6, 10))
+        self._build_mode(body)
+        self._build_delays(body)
+        self._build_bottom()
+    def _build_mode(self, body):
+        card = self._section(body, "editor_mode", 0, 1)
+        for key in self.MODE_KEYS:
+            rb = tk.Radiobutton(card, text=T(self.lang, "mode_" + key + "_short"), variable=self.var_mode, value=key,
+                                bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, activeforeground=GOLD,
+                                anchor="w", command=self._refresh_editor)
+            rb.pack(anchor="w", padx=14, pady=1)
+            if key == "threshold":
+                self.rb_mode_thresh = rb
+        self.lbl_mode_desc = tk.Label(card, text="", bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left")
+        self.lbl_mode_desc.pack(anchor="w", padx=14, pady=(4, 2))
+        self.frame_tap = tk.Frame(card, bg=CARD)
+        tk.Label(self.frame_tap, text=T(self.lang, "editor_tap_ms"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(side="left")
+        self.sp_tap = self._spin(self.frame_tap, self.var_tap, 20, 5000, 10)
+        self.sp_tap.pack(side="left", padx=(8, 0))
+        self.frame_repeat = tk.Frame(card, bg=CARD)
+        tk.Label(self.frame_repeat, text=T(self.lang, "editor_repeat_count"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", pady=2)
+        self.sp_rep_count = self._spin(self.frame_repeat, self.var_rep_count, 1, 20)
+        self.sp_rep_count.grid(row=0, column=1, padx=(8, 0))
+        tk.Label(self.frame_repeat, text=T(self.lang, "editor_repeat_interval"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", pady=2)
+        self.sp_rep_interval = self._spin(self.frame_repeat, self.var_rep_interval, 40, 5000, 10)
+        self.sp_rep_interval.grid(row=1, column=1, padx=(8, 0))
+        tk.Label(self.frame_repeat, text=T(self.lang, "editor_repeat_press"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).grid(row=2, column=0, sticky="w", pady=2)
+        self.sp_rep_press = self._spin(self.frame_repeat, self.var_rep_press, 20, 5000, 10)
+        self.sp_rep_press.grid(row=2, column=1, padx=(8, 0))
+        tk.Checkbutton(self.frame_repeat, text=T(self.lang, "editor_continuous"), variable=self.var_continuous,
+                       bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        tk.Label(self.frame_repeat, text=T(self.lang, "editor_continuous_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=290, justify="left").grid(row=4, column=0, columnspan=2, sticky="w")
+        self.frame_threshold = tk.Frame(card, bg=CARD)
+        tk.Label(self.frame_threshold, text=T(self.lang, "editor_threshold"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(side="left")
+        self.sc_thr = ttk.Scale(self.frame_threshold, from_=5, to=98, orient="horizontal", variable=self.var_threshold, command=lambda v: self._upd_thr_label())
+        self.sc_thr.pack(side="left", fill="x", expand=True, padx=8)
+        self.lbl_thr = tk.Label(self.frame_threshold, text="", bg=CARD, fg=MUTED, width=4)
+        self.lbl_thr.pack(side="right")
+        tk.Label(card, text=T(self.lang, "editor_threshold_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left").pack(anchor="w", padx=14, pady=(6, 10))
+        self.var_rep_interval.trace_add("write", lambda *a: self._clamp_press())
+
+    def _build_delays(self, body):
+        card = self._section(body, "editor_delays", 1, 1)
+        tk.Checkbutton(card, text=T(self.lang, "editor_delay_enable"), variable=self.var_delay_enabled, bg=CARD, fg=TEXT,
+                       selectcolor=PANEL, activebackground=CARD, command=self._refresh_editor).pack(anchor="w", padx=14)
+        tk.Label(card, text=T(self.lang, "editor_delay_activate"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(anchor="w", padx=14, pady=(8, 2))
+        self.sp_delay_act = self._spin(card, self.var_delay_act, 0, 3000, 10)
+        self.sp_delay_act.pack(anchor="w", padx=14)
+        tk.Label(card, text=T(self.lang, "editor_delay_deactivate"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(anchor="w", padx=14, pady=(8, 2))
+        self.sp_delay_deact = self._spin(card, self.var_delay_deact, 0, 3000, 10)
+        self.sp_delay_deact.pack(anchor="w", padx=14, pady=(0, 10))
+
+    def _build_bottom(self):
+        bar = tk.Frame(self, bg=BG)
+        bar.pack(fill="x", padx=14, pady=(2, 12))
+        tk.Button(bar, text=T(self.lang, "editor_test"), bg=PANEL, fg=GOLD, relief="flat", padx=12, pady=6, command=self._test).pack(side="left")
+        self.lbl_test = tk.Label(bar, text=T(self.lang, "editor_test_info"), bg=BG, fg=MUTED, font=("Segoe UI", 8), wraplength=260, justify="left")
+        self.lbl_test.pack(side="left", padx=8)
+        tk.Button(bar, text=T(self.lang, "editor_reset"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._reset).pack(side="left", padx=(10, 0))
+        tk.Button(bar, text=T(self.lang, "editor_save"), bg=GOLD, fg="#101318", relief="flat", padx=16, pady=6, command=self._save).pack(side="right")
+        tk.Button(bar, text=T(self.lang, "editor_cancel"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._cancel).pack(side="right", padx=(0, 8))
+
+    def _int(self, var, default=0, lo=0, hi=99999):
+        try:
+            return max(lo, min(hi, int(float(var.get()))))
+        except Exception:
+            return default
+
+    def _key_from_label(self, label, table, default=""):
+        for k, v in table.items():
+            if v == label:
+                return k
+        return default
+
+    def _cond_key(self):
+        m = {T(self.lang, "cond_direct"): "direct", T(self.lang, "cond_threshold"): "threshold", T(self.lang, "cond_sequence"): "sequence"}
+        return m.get(self.var_cond.get(), "direct")
+
+    def _load(self):
+        s = self.src
+        self.var_input.set(INPUT_LABELS.get(s.get("input", "A"), "A"))
+        self.var_action.set(ACTION_LABELS.get(s.get("action", "B"), "B"))
+        self.var_mode.set(s.get("mode", "hold"))
+        cond = s.get("condition") or {}
+        ctype = cond.get("type", "direct")
+        if ctype not in ("direct", "threshold", "sequence"):
+            ctype = "direct"
+        self.var_cond.set(T(self.lang, {"direct": "cond_direct", "threshold": "cond_threshold", "sequence": "cond_sequence"}[ctype]))
+        if s.get("modifier"):
+            self.var_modifier.set(INPUT_LABELS.get(s["modifier"], T(self.lang, "editor_modifier_none")))
+        else:
+            self.var_modifier.set(T(self.lang, "editor_modifier_none"))
+        self.var_tap.set(str(int(s.get("tap_ms", 80))))
+        r = s.get("repeat") or {}
+        self.var_rep_count.set(str(int(r.get("count", 3))))
+        self.var_rep_interval.set(str(int(r.get("interval_ms", 300))))
+        self.var_rep_press.set(str(int(r.get("press_ms", 60))))
+        self.var_continuous.set(bool(r.get("continuous", False)))
+        try:
+            self.var_threshold.set(float(cond.get("threshold", 0.5)) * 100.0)
+        except Exception:
+            self.var_threshold.set(50.0)
+        self.var_seq_count.set(str(int(cond.get("count", 2))))
+        self.var_seq_interval.set(str(int(cond.get("interval_ms", 320))))
+        d = s.get("delay") or {}
+        self.var_delay_enabled.set(bool(d.get("enabled", False)))
+        self.var_delay_act.set(str(int(d.get("activate_ms", 0))))
+        self.var_delay_deact.set(str(int(d.get("deactivate_ms", 0))))
+
+    def _upd_thr_label(self):
+        try:
+            self.lbl_thr.config(text="%d%%" % int(float(self.var_threshold.get())))
+        except Exception:
+            pass
+
+    def _clamp_press(self):
+        interval = self._int(self.var_rep_interval, 300, 40, 5000)
+        press = self._int(self.var_rep_press, 60, 20, 5000)
+        if press > interval - 10:
+            self.var_rep_press.set(str(max(20, interval - 10)))
+
+    def _refresh_editor(self):
+        key = self._key_from_label(self.var_input.get(), INPUT_LABELS, "A")
+        analog = key in ANALOG_INPUTS
+        cond_vals = [T(self.lang, "cond_direct"), T(self.lang, "cond_sequence")]
+        if analog:
+            cond_vals.insert(1, T(self.lang, "cond_threshold"))
+        self.cb_cond.configure(values=cond_vals)
+        cond_key = self._cond_key()
+        if cond_key == "threshold" and not analog:
+            cond_key = "direct"
+            self.var_cond.set(T(self.lang, "cond_direct"))
+        self.rb_mode_thresh.config(state="normal" if analog else "disabled")
+        if not analog and self.var_mode.get() == "threshold":
+            self.var_mode.set("hold")
+        mod_vals = [T(self.lang, "editor_modifier_none")] + [INPUT_LABELS[k] for k in BUTTON_INPUTS]
+        self.cb_modifier.configure(values=mod_vals)
+        mode = self.var_mode.get()
+        for frame in (self.frame_tap, self.frame_repeat, self.frame_threshold, self.frame_seq):
+            frame.pack_forget()
+        if mode == "tap":
+            self.frame_tap.pack(anchor="w", padx=14, pady=(2, 6))
+        if mode == "repeat":
+            self.frame_repeat.pack(anchor="w", padx=14, pady=(2, 6))
+        if mode == "threshold" or cond_key == "threshold":
+            self.frame_threshold.pack(anchor="w", padx=14, pady=(2, 6))
+        if cond_key == "sequence":
+            self.frame_seq.pack(anchor="w", padx=14, pady=(2, 6))
+        self.lbl_mode_desc.config(text=T(self.lang, "mode_" + mode + "_desc"))
+        self.lbl_cond_desc.config(text=T(self.lang, "cond_" + cond_key + "_desc"))
+        self._upd_thr_label()
+        state = "normal" if self.var_delay_enabled.get() else "disabled"
+        for w in (self.sp_delay_act, self.sp_delay_deact):
+            try:
+                w.configure(state=state)
+            except Exception:
+                pass
+    def _toggle_detect(self):
+        self.detecting = not self.detecting
+        self.btn_detect.config(text=T(self.lang, "editor_detect_stop" if self.detecting else "editor_detect"))
+        self.lbl_detect.config(text=T(self.lang, "editor_detect_wait") if self.detecting else "")
+        if self.detecting:
+            self._poll_detect()
+
+    def _poll_detect(self):
+        if not self.detecting:
+            return
+        vis = getattr(self.app, "last_visual", None)
+        key = None
+        if vis:
+            buttons = vis.get("buttons", {})
+            for k in BUTTON_INPUTS:
+                if buttons.get(k):
+                    key = k
+                    break
+            if key is None:
+                try:
+                    if float(vis.get("lt", 0.0)) >= 0.5:
+                        key = "LT"
+                    elif float(vis.get("rt", 0.0)) >= 0.5:
+                        key = "RT"
+                except Exception:
+                    pass
+            if key is None:
+                try:
+                    lx = float(vis.get("lx", 0.0))
+                    ly = float(vis.get("ly", 0.0))
+                    rx = float(vis.get("rx", 0.0))
+                    ry = float(vis.get("ry", 0.0))
+                    cands = [("LS_UP", ly), ("LS_DOWN", -ly), ("LS_LEFT", -lx), ("LS_RIGHT", lx),
+                             ("RS_UP", ry), ("RS_DOWN", -ry), ("RS_LEFT", -rx), ("RS_RIGHT", rx)]
+                    best = max(cands, key=lambda c: c[1])
+                    if best[1] >= 0.6:
+                        key = best[0]
+                except Exception:
+                    pass
+        if key:
+            self.detecting = False
+            self.btn_detect.config(text=T(self.lang, "editor_detect"))
+            self.lbl_detect.config(text="")
+            self.var_input.set(INPUT_LABELS.get(key, key))
+            self._refresh_editor()
+            return
+        self.after(60, self._poll_detect)
+
+    def _collect(self):
+        key = self._key_from_label(self.var_input.get(), INPUT_LABELS, "A")
+        action = self._key_from_label(self.var_action.get(), ACTION_LABELS, "B")
+        mode = self.var_mode.get()
+        if mode not in ("hold", "tap", "toggle", "repeat", "threshold"):
+            mode = "hold"
+        cond_type = self._cond_key()
+        if (mode == "threshold" or cond_type == "threshold") and key not in ANALOG_INPUTS:
+            messagebox.showerror(T(self.lang, "editor_edit" if self.editing else "editor_new"), T(self.lang, "editor_threshold_needs_analog"), parent=self)
+            return None
+        m = default_mapping()
+        m["input"] = key
+        m["action"] = action
+        m["mode"] = mode
+        m["name"] = self.src.get("name", "")
+        m["enabled"] = self.src.get("enabled", True)
+        mod_label = self.var_modifier.get()
+        m["modifier"] = "" if mod_label == T(self.lang, "editor_modifier_none") else self._key_from_label(mod_label, INPUT_LABELS, "")
+        interval = self._int(self.var_rep_interval, 300, 40, 5000)
+        press = self._int(self.var_rep_press, 60, 20, max(20, interval - 10))
+        m["tap_ms"] = self._int(self.var_tap, 80, 20, 5000)
+        try:
+            thr = float(self.var_threshold.get()) / 100.0
+        except Exception:
+            thr = 0.5
+        m["condition"] = {
+            "type": cond_type,
+            "count": self._int(self.var_seq_count, 2, 2, 5),
+            "interval_ms": self._int(self.var_seq_interval, 320, 50, 2000),
+            "threshold": max(0.05, min(0.98, thr)),
+        }
+        m["repeat"] = {"count": self._int(self.var_rep_count, 3, 1, 20), "interval_ms": interval, "press_ms": press, "continuous": bool(self.var_continuous.get())}
+        m["delay"] = {"enabled": bool(self.var_delay_enabled.get()), "activate_ms": self._int(self.var_delay_act, 0, 0, 3000), "deactivate_ms": self._int(self.var_delay_deact, 0, 0, 3000)}
+        return m
+
+    def _test(self):
+        m = self._collect()
+        if m is None:
+            return
+        ok = False
+        try:
+            ok = self.app.engine.test_mapping(m)
+        except Exception:
+            ok = False
+        self.lbl_test.config(text=T(self.lang, "editor_test_sent") if ok else T(self.lang, "editor_test_fail"))
+
+    def _save(self):
+        m = self._collect()
+        if m is None:
+            return
+        conflict = False
+        for other in self.app._current_mappings():
+            if self.editing and other.get("id") == self.src.get("id"):
+                continue
+            o_cond = (other.get("condition") or {}).get("type", "direct")
+            if (other.get("input") == m["input"] and (other.get("modifier") or "") == m["modifier"]
+                    and o_cond == m["condition"]["type"] and other.get("enabled", True)):
+                conflict = True
+                break
+        if conflict:
+            if not messagebox.askyesno(T(self.lang, "editor_conflict_title"), T(self.lang, "editor_conflict"), parent=self):
+                return
+        self.on_save(m)
+        self._close()
+
+    def _reset(self):
+        self.src = default_mapping()
+        self.editing = False
+        self.title(T(self.lang, "editor_new"))
+        self._load()
+        self._refresh_editor()
+
+    def _cancel(self):
+        self._close()
+
+    def _close(self):
+        self.detecting = False
+        try:
+            self.grab_release()
+        except Exception:
+            pass
+        self.destroy()
+
 
 def on_close_window(app):
     app.engine.stop()
     app.root.destroy()
+
 
 def main():
     root = tk.Tk()
     app = App(root)
     root.protocol("WM_DELETE_WINDOW", lambda: on_close_window(app))
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

@@ -11,10 +11,14 @@ Correr en juegos como Onimusha puede depender de tocar dos veces el stick izquie
 - Lectura en tiempo real del controlador Xbox real mediante XInput.
 - Controlador Xbox virtual mediante ViGEmBus/vgamepad.
 - Espejo de todos los ejes y botones al controlador virtual.
-- Gatillo por analogico: empuje el stick hacia adelante de 0 a 4 veces. 0 significa mantener para activar.
-- Gatillo por boton: elige A, B, X, Y, LB, RB, LT, RT, L3/L4, Start, Back o D-Pad, con 1 a 4 pulsaciones.
-- Modo del L3: Mantener (sigue corriendo mientras caminas) o Toque (clic rapido).
-- Retardo de activacion y desactivacion configurable (0 a 1000 ms), con opcion de activar/desactivar.
+- Editor visual de mapeos: elige la entrada fisica (con boton "Detectar entrada"), la accion de destino y el modo de activacion, todo con selectores - sin escribir codigo.
+- Modos de activacion: Mantener, Toque unico, Alternar, Repetir y Umbral analogico.
+- Repetir Nx por activacion (ej.: exactamente 3 veces por toque), con intervalo, duracion de pulsacion y repetecion continua opcional (desactivada por defecto).
+- Condiciones de activacion: directa, umbral analogico o secuencia de toques rapidos (ej.: doble empuje del LS), con entrada modificadora opcional (ej.: LB).
+- Boton "Probar mapeo" envia la secuencia al controlador virtual antes de guardar.
+- Lista con resumen legible (ej.: `LS a B · Repetir 3x · Intervalo 300 ms`), editar con doble clic, duplicar, activar/desactivar y eliminar.
+- Aviso de conflictos entre mapeos antes de guardar.
+- Migracion automatica de configuraciones antiguas, sin borrar datos.
 - Interfaz negro/dorado, icono, estado en tiempo real e indicador de LS.
 - Soporte opcional de HidHide para ocultar el controlador real y hacer el virtual principal.
 - Idiomas: Portugues, English, Espanol.
@@ -42,10 +46,11 @@ Abre `dist\OniDashL3\OniDashL3.exe` o el acceso directo `OniDash L3`.
 
 Pasos:
 1. Conecta el controlador Xbox por USB.
-2. Selecciona el controlador en la lista.
-3. Ajusta gatillos, modo y retardos.
-4. Activa la funcion.
-5. En el juego/Steam, elige el controlador virtual si hace falta.
+2. En Configuracion, elige el slot XInput del controlador.
+3. En Mapeo, haz clic en "Anadir mapeo".
+4. Elige la entrada (o usa "Detectar entrada" y pulsala), la accion, el modo y las opciones.
+5. Usa "Probar mapeo" para comprobar; luego "Guardar".
+6. En el juego/Steam, elige el controlador virtual si hace falta.
 
 ## HidHide (opcional)
 

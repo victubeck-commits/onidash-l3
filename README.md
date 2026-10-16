@@ -11,10 +11,14 @@ Jogos como Onimusha: Way of the Sword usam o duplo toque do analogico esquerdo o
 - Leitura em tempo real do controle Xbox real via XInput.
 - Controle Xbox virtual via ViGEmBus/vgamepad.
 - Espelhamento de todos os eixos e botoes para o controle virtual.
-- Gatilho por analogico: empurre o stick para frente de 0 a 4 vezes. 0 significa "so de segurar".
-- Gatilho por botao: escolha A, B, X, Y, LB, RB, LT, RT, L3/L4, Start, Back ou D-Pad, com 1 a 4 pressoes.
-- Modo do L3: Segurar (corre enquanto anda) ou Toque (clique rapido).
-- Delay de ativacao e desativacao configuravel (0 a 1000 ms), com opcao de ativar/desativar.
+- Editor visual de mapeamentos: escolha a entrada fisica (com botao "Detectar entrada"), a acao de destino e o modo de ativacao, tudo por seletores - sem digitar codigo.
+- Modos de ativacao: Segurar, Toque unico, Alternar, Repetir e Ativar por limiar analogico.
+- Repetir Nx por ativacao (ex.: exatamente 3 vezes por toque), com intervalo, duracao do pressionamento e opcao de repeticao continua (desligada por padrao).
+- Condicoes de ativacao: direta, limiar analogico ou sequencia de toques rapidos (ex.: duplo empurrao do LS), com entrada modificadora opcional (ex.: LB).
+- Botao "Testar mapeamento" envia a sequencia para o controle virtual antes de salvar.
+- Lista com resumo legivel (ex.: `LS para B · Repetir 3x · Intervalo 300 ms`), editar com clique duplo, duplicar, ativar/desativar e remover.
+- Aviso de conflitos entre mapeamentos antes de salvar.
+- Migracao automatica de configuracoes antigas, sem apagar dados.
 - Interface preto/dourado, icone, status em tempo real e indicador do LS.
 - Suporte opcional ao HidHide para ocultar o controle real e tornar o virtual o principal.
 - Idiomas: Portugues, English, Espanol.
@@ -42,10 +46,11 @@ Abra `dist\OniDashL3\OniDashL3.exe` ou o atalho `OniDash L3`.
 
 Passos:
 1. Conecte o controle Xbox por USB.
-2. Selecione o controle na lista.
-3. Ajuste gatilhos, modo e delays.
-4. Ative a funcao.
-5. No jogo/Steam, escolha o controle virtual se necessario.
+2. Em Configuracoes, escolha o slot XInput do controle.
+3. Em Mapeamento, clique em "Adicionar mapeamento".
+4. Escolha a entrada (ou use "Detectar entrada" e pressione o botao/analogico), a acao, o modo e as opcoes.
+5. Use "Testar mapeamento" para conferir; depois "Salvar".
+6. No jogo/Steam, escolha o controle virtual se necessario.
 
 ## HidHide (opcional)
 
