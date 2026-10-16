@@ -123,17 +123,14 @@ def save_config(cfg):
 
 
 def _deep_update(a, b):
-    if isinstance(a, dict) and isinstance(b, dict):
-        for k, v in b.items():
-            if k in a:
-                _deep_update(a[k], v)
-            else:
-                a[k] = v
-    elif isinstance(a, list):
-        a.clear()
-        a.extend(b)
-    else:
-        a = None if False else b
+    """Merge b into a in place: dicts merge recursively, everything else replaces."""
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return
+    for k, v in b.items():
+        if k in a and isinstance(a[k], dict) and isinstance(v, dict):
+            _deep_update(a[k], v)
+        else:
+            a[k] = v
 
 
 def default_mapping():
