@@ -671,9 +671,9 @@ class App:
     def _build_sidebar(self):
         title = tk.Label(self.sidebar, text="OniDash L3", bg=PANEL, fg=GOLD, font=("Segoe UI", 14, "bold"))
         title.pack(anchor="w", padx=18, pady=(18, 10))
-        subtitle = tk.Label(self.sidebar, text="Universal Controller", bg=PANEL, fg=MUTED, font=("Segoe UI", 9))
+        subtitle = tk.Label(self.sidebar, text=T(self.lang, "universal_controller"), bg=PANEL, fg=MUTED, font=("Segoe UI", 9))
         subtitle.pack(anchor="w", padx=18, pady=(0, 16))
-        self.status_label = tk.Label(self.sidebar, text="Stopped", bg=PANEL, fg=DANGER, font=("Segoe UI", 9, "bold"))
+        self.status_label = tk.Label(self.sidebar, text=T(self.lang, "stopped"), bg=PANEL, fg=DANGER, font=("Segoe UI", 9, "bold"))
         self.status_label.pack(anchor="w", padx=18, pady=(0, 14))
         for key, label_key in [("home", "nav_home"), ("mapping", "nav_mapping"), ("analog", "nav_analog"), ("triggers", "nav_triggers"), ("profiles", "nav_profiles"), ("settings", "nav_settings")]:
             btn = tk.Button(self.sidebar, text=T(self.lang, label_key), bg=PANEL, fg=TEXT, relief="flat", anchor="w", padx=18, pady=10,
@@ -707,7 +707,7 @@ class App:
         self.card_conn = RoundedCard(right)
         self.card_conn.pack(fill="x", pady=(0, 12))
         tk.Label(self.card_conn, text=T(self.lang, "controller_status"), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
-        self.conn_value = tk.Label(self.card_conn, text="Checking...", bg=CARD, fg=TEXT, font=("Segoe UI", 12, "bold"))
+        self.conn_value = tk.Label(self.card_conn, text=T(self.lang, "checking"), bg=CARD, fg=TEXT, font=("Segoe UI", 12, "bold"))
         self.conn_value.pack(anchor="w", padx=16, pady=(0, 12))
         self.card_mapper = RoundedCard(right)
         self.card_mapper.pack(fill="x")
@@ -746,7 +746,7 @@ class App:
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
-        for text, cmd in [("Add Mapping", self._add_mapping), ("Edit", self._edit_mapping), ("Duplicate", self._duplicate_mapping), ("Remove", self._remove_mapping)]:
+        for text, cmd in [(T(self.lang, "add_mapping"), self._add_mapping), (T(self.lang, "edit"), self._edit_mapping), (T(self.lang, "duplicate"), self._duplicate_mapping), (T(self.lang, "remove"), self._remove_mapping)]:
             tk.Button(toolbar, text=text, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
         self.map_tree = ttk.Treeview(parent, columns=("input", "action", "mode", "configure"), show="headings", height=16)
         for col, head in (("input", "Physical Input"), ("action", "Assigned Action"), ("mode", "Mode"), ("configure", "Configure")):
@@ -754,7 +754,7 @@ class App:
             self.map_tree.column(col, width=260 if col in ("input", "action") else 160)
         self.map_tree.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 16))
         parent.rowconfigure(2, weight=1)
-        btn_refresh = tk.Button(parent, text="Refresh", bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._refresh_mappings)
+        btn_refresh = tk.Button(parent, text=T(self.lang, "refresh"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._refresh_mappings)
         btn_refresh.grid(row=3, column=0, sticky="w", padx=24, pady=(0, 16))
         self._refresh_mappings()
 
@@ -785,7 +785,7 @@ class App:
             for opt in ("invert_x", "invert_y"):
                 var = tk.BooleanVar(value=cfg.get(opt, False))
                 tk.Checkbutton(card, text=opt.replace("_", " ").title(), variable=var, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda s=side, o=opt, v=var: self._set_analog(s, o, v.get())).pack(anchor="w", padx=16, pady=2)
-        tk.Label(container, text="Changes apply to active configuration.", bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=1, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        tk.Label(container, text=T(self.lang, "changes_apply"), bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=1, column=0, columnspan=2, sticky="w", pady=(12, 0))
 
     def _set_analog(self, side, key, value):
         self.cfg["analog"][side][key] = value
@@ -793,7 +793,7 @@ class App:
 
     def _build_triggers(self, parent):
         parent.columnconfigure(0, weight=1)
-        header = tk.Label(parent, text="Triggers", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "triggers_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
@@ -812,7 +812,7 @@ class App:
                 tk.Label(row, text=str(var.get()), bg=CARD, fg=MUTED, width=4).pack(side="right")
                 scale.configure(command=lambda v, s=side, k=key, va=var, lab=None: self._set_trigger(s, k, va.get() / (100.0 if k == "deadzone" else 100.0)))
             inv = tk.BooleanVar(value=cfg.get("invert", False))
-            tk.Checkbutton(card, text="Invert", variable=inv, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda s=side, v=inv: self._set_trigger(s, "invert", v.get())).pack(anchor="w", padx=16, pady=6)
+            tk.Checkbutton(card, text=T(self.lang, "invert"), variable=inv, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda s=side, v=inv: self._set_trigger(s, "invert", v.get())).pack(anchor="w", padx=16, pady=6)
 
     def _set_trigger(self, side, key, value):
         self.cfg["triggers"][side][key] = value
@@ -841,9 +841,9 @@ class App:
             tk.Label(card, text=prof.get("description", ""), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(0, 8))
             row = tk.Frame(card, bg=CARD)
             row.pack(fill="x", padx=16, pady=(0, 12))
-            tk.Button(row, text="Use", bg=PANEL, fg=TEXT, relief="flat", padx=10, pady=4, command=lambda p=prof: self._use_profile(p)).pack(side="left", padx=(0, 6))
-            tk.Button(row, text="Edit", bg=PANEL, fg=TEXT, relief="flat", padx=10, pady=4, command=lambda p=prof: self._edit_profile(p)).pack(side="left", padx=(0, 6))
-            tk.Button(row, text="Delete", bg=PANEL, fg=DANGER, relief="flat", padx=10, pady=4, command=lambda p=prof: self._delete_profile(p)).pack(side="left")
+            tk.Button(row, text=T(self.lang, "use"), bg=PANEL, fg=TEXT, relief="flat", padx=10, pady=4, command=lambda p=prof: self._use_profile(p)).pack(side="left", padx=(0, 6))
+            tk.Button(row, text=T(self.lang, "edit"), bg=PANEL, fg=TEXT, relief="flat", padx=10, pady=4, command=lambda p=prof: self._edit_profile(p)).pack(side="left", padx=(0, 6))
+            tk.Button(row, text=T(self.lang, "delete"), bg=PANEL, fg=DANGER, relief="flat", padx=10, pady=4, command=lambda p=prof: self._delete_profile(p)).pack(side="left")
 
     def _use_profile(self, prof):
         self.cfg["profile_name"] = prof.get("name")
@@ -1044,7 +1044,7 @@ class App:
             pass
 
     def _update_visual(self, state):
-        self.conn_value.config(text="Connected" if state.get("connected") else "Disconnected")
+        self.conn_value.config(text=T(self.lang, "status_connected") if state.get("connected") else T(self.lang, "status_disconnected"))
         self.profile_value.config(text=state.get("active_profile", self.profile_name))
         pressed = state.get("pressed", set())
         for button in ("A", "B", "X", "Y"):
