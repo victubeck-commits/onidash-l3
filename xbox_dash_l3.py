@@ -149,6 +149,7 @@ def default_mapping():
         "tap_ms": 80,
         "repeat": {"count": 3, "interval_ms": 300, "press_ms": 60, "continuous": False},
         "delay": {"enabled": False, "activate_ms": 0, "deactivate_ms": 0},
+        "hold_while_moving": False,
     }
 
 
@@ -240,6 +241,7 @@ def normalize_mapping(m):
             "activate_ms": int(trig.get("delay_activate_ms", 0) or 0),
             "deactivate_ms": int(trig.get("delay_deactivate_ms", 0) or 0),
         },
+        "hold_while_moving": False,
     }
 def migrate(cfg):
     legacy = cfg.get("legacy", {})
@@ -387,6 +389,22 @@ def evaluate_mapping(m, st, vals, now):
         held = pressed
         edge = pressed and not st.get("prev_pressed", False)
         st["prev_pressed"] = pressed
+
+    if mode == "hold" and m.get("hold_while_moving", False):
+        try:
+            mx = max(abs(float(vals.get("lx", 0.0) or 0.0)), abs(float(vals.get("ly", 0.0) or 0.0)))
+        except Exception:
+            mx = 0.0
+        moving = mx >= 0.2
+        if moving:
+            st["mw_last_move"] = now
+        if edge:
+            st["mw_latch"] = True
+            st["mw_last_move"] = now
+        if st.get("mw_latch"):
+            if (now - float(st.get("mw_last_move", 0.0) or 0.0)) > 0.5:
+                st["mw_latch"] = False
+        held = bool(st.get("mw_latch"))
 
     d = m.get("delay") or {}
     delay_on = bool(d.get("enabled", False))
@@ -1144,6 +1162,8 @@ class App:
             parts.append(T(lang, "sum_threshold", pct=pct))
         if m.get("modifier"):
             parts.append(T(lang, "sum_modifier", btn=INPUT_LABELS.get(m["modifier"], m["modifier"])))
+        if mode == "hold" and m.get("hold_while_moving"):
+            parts.append(T(lang, "sum_while_moving"))
         d = m.get("delay") or {}
         if d.get("enabled"):
             parts.append(T(lang, "sum_delays", a=d.get("activate_ms", 0), d=d.get("deactivate_ms", 0)))
@@ -1240,6 +1260,7 @@ class App:
             "action": "LS",
             "tap_ms": 130,
             "delay": {"enabled": True, "activate_ms": 350, "deactivate_ms": 0},
+            "hold_while_moving": True,
         })
 
     def _add_preset_mapping(self, name, spec):
@@ -1639,6 +1660,7 @@ class MappingEditor(tk.Toplevel):
         self.var_delay_enabled = tk.BooleanVar()
         self.var_delay_act = tk.StringVar()
         self.var_delay_deact = tk.StringVar()
+        self.var_hold_moving = tk.BooleanVar()
 
     def _section(self, parent, title_key, row, col, pady=(0, 10), pad=(4, 4)):
         card = RoundedCard(parent)
@@ -1722,12 +1744,18 @@ class MappingEditor(tk.Toplevel):
                        bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 0))
         tk.Label(self.frame_repeat, text=T(self.lang, "editor_continuous_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=290, justify="left").grid(row=4, column=0, columnspan=2, sticky="w")
         self.frame_threshold = tk.Frame(card, bg=CARD)
-        tk.Label(self.frame_threshold, text=T(self.lang, "editor_threshold"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(side="left")
-        self.sc_thr = ttk.Scale(self.frame_threshold, from_=5, to=98, orient="horizontal", variable=self.var_threshold, command=lambda v: self._upd_thr_label())
+        trow = tk.Frame(self.frame_threshold, bg=CARD)
+        trow.pack(fill="x")
+        tk.Label(trow, text=T(self.lang, "editor_threshold"), bg=CARD, fg=TEXT, font=("Segoe UI", 9)).pack(side="left")
+        self.sc_thr = ttk.Scale(trow, from_=5, to=98, orient="horizontal", variable=self.var_threshold, command=lambda v: self._upd_thr_label())
         self.sc_thr.pack(side="left", fill="x", expand=True, padx=8)
-        self.lbl_thr = tk.Label(self.frame_threshold, text="", bg=CARD, fg=MUTED, width=4)
+        self.lbl_thr = tk.Label(trow, text="", bg=CARD, fg=MUTED, width=4)
         self.lbl_thr.pack(side="right")
-        tk.Label(card, text=T(self.lang, "editor_threshold_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=300, justify="left").pack(anchor="w", padx=14, pady=(6, 10))
+        tk.Label(self.frame_threshold, text=T(self.lang, "editor_threshold_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=290, justify="left").pack(anchor="w", pady=(4, 0))
+        self.frame_hold_moving = tk.Frame(card, bg=CARD)
+        tk.Checkbutton(self.frame_hold_moving, text=T(self.lang, "editor_hold_while_moving"), variable=self.var_hold_moving,
+                       bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, wraplength=290, justify="left").pack(anchor="w")
+        tk.Label(self.frame_hold_moving, text=T(self.lang, "editor_hold_while_moving_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=290, justify="left").pack(anchor="w")
         self.var_rep_interval.trace_add("write", lambda *a: self._clamp_press())
 
     def _build_delays(self, body):
@@ -1797,6 +1825,7 @@ class MappingEditor(tk.Toplevel):
         self.var_delay_enabled.set(bool(d.get("enabled", False)))
         self.var_delay_act.set(str(int(d.get("activate_ms", 0))))
         self.var_delay_deact.set(str(int(d.get("deactivate_ms", 0))))
+        self.var_hold_moving.set(bool(s.get("hold_while_moving", False)))
 
     def _upd_thr_label(self):
         try:
@@ -1827,8 +1856,10 @@ class MappingEditor(tk.Toplevel):
         mod_vals = [T(self.lang, "editor_modifier_none")] + [INPUT_LABELS[k] for k in BUTTON_INPUTS]
         self.cb_modifier.configure(values=mod_vals)
         mode = self.var_mode.get()
-        for frame in (self.frame_tap, self.frame_repeat, self.frame_threshold, self.frame_seq):
+        for frame in (self.frame_hold_moving, self.frame_tap, self.frame_repeat, self.frame_threshold, self.frame_seq):
             frame.pack_forget()
+        if mode == "hold":
+            self.frame_hold_moving.pack(anchor="w", padx=14, pady=(2, 6))
         if mode == "tap":
             self.frame_tap.pack(anchor="w", padx=14, pady=(2, 6))
         if mode == "repeat":
@@ -1927,6 +1958,7 @@ class MappingEditor(tk.Toplevel):
         }
         m["repeat"] = {"count": self._int(self.var_rep_count, 3, 1, 20), "interval_ms": interval, "press_ms": press, "continuous": bool(self.var_continuous.get())}
         m["delay"] = {"enabled": bool(self.var_delay_enabled.get()), "activate_ms": self._int(self.var_delay_act, 0, 0, 3000), "deactivate_ms": self._int(self.var_delay_deact, 0, 0, 3000)}
+        m["hold_while_moving"] = bool(self.var_hold_moving.get())
         return m
 
     def _test(self):

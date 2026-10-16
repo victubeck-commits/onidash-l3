@@ -125,6 +125,8 @@ _ROWS = [
     ("editor_repeat_press", "Duração de cada pressionamento (ms)", "Duration of each press (ms)", "Duración de cada pulsación (ms)"),
     ("editor_continuous", "Repetir continuamente até soltar", "Repeat continuously until release", "Repetir continuamente hasta soltar"),
     ("editor_continuous_help", "Desativado: repete apenas a quantidade definida, uma vez por ativação.", "Off: repeats only the set amount, once per activation.", "Desactivado: repite solo la cantidad definida, una vez por activación."),
+    ("editor_hold_while_moving", "Manter enquanto o analógico esquerdo se move", "Stay pressed while the left stick moves", "Mantener mientras el analógico izquierdo se mueve"),
+    ("editor_hold_while_moving_help", "Depois de ativar, a ação fica pressionada enquanto você mexe o analógico esquerdo; ao parar (analógico no centro), solta \u2014 é preciso ativar de novo.", "After activation, the action stays pressed while the left stick moves; when you stop (stick centered), it releases \u2014 activate again to re-arm.", "Tras activar, la acción queda pulsada mientras mueves el analógico izquierdo; al parar (analógico al centro), se suelta \u2014 hay que activar de nuevo."),
     ("editor_delays", "Atrasos", "Delays", "Retardos"),
     ("editor_delay_enable", "Usar atrasos neste mapeamento", "Use delays in this mapping", "Usar retardos en este mapeo"),
     ("editor_delay_activate", "Atraso para ativar (ms)", "Activation delay (ms)", "Retardo para activar (ms)"),
@@ -165,6 +167,7 @@ _ROWS = [
     ("sum_threshold", "Limiar {pct}%", "Threshold {pct}%", "Umbral {pct}%"),
     ("sum_seq", "{n} toques rápidos ({ms} ms)", "{n} quick presses ({ms} ms)", "{n} pulsaciones rápidas ({ms} ms)"),
     ("sum_modifier", "com {btn}", "with {btn}", "con {btn}"),
+    ("sum_while_moving", "Enquanto em movimento", "While moving", "Mientras en movimiento"),
     ("sum_delays", "Atrasos {a}/{d} ms", "Delays {a}/{d} ms", "Retardos {a}/{d} ms"),
 ]
 
