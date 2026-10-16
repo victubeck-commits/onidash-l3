@@ -509,6 +509,49 @@ def run_hidhide(cli, *args):
         return 999, "", str(e)
 
 
+def _pnp_parent_path(instance_path):
+    """Return the parent PnP device instance path, or None."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        cm = ctypes.WinDLL("cfgmgr32")
+        devinst = wintypes.DWORD()
+        if cm.CM_Locate_DevNodeW(ctypes.byref(devinst), ctypes.c_wchar_p(str(instance_path)), 0) != 0:
+            return None
+        parent = wintypes.DWORD()
+        if cm.CM_Get_Parent(ctypes.byref(parent), devinst, 0) != 0:
+            return None
+        buf = ctypes.create_unicode_buffer(512)
+        if cm.CM_Get_Device_IDW(parent, buf, 512, 0) != 0:
+            return None
+        return buf.value or None
+    except Exception:
+        return None
+
+
+def _device_service(instance_path):
+    """Driver service bound to a device (from the PnP Enum registry key)."""
+    try:
+        import winreg
+        key = "SYSTEM\\CurrentControlSet\\Enum\\" + str(instance_path)
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key) as k:
+            return str(winreg.QueryValueEx(k, "Service")[0])
+    except Exception:
+        return ""
+
+
+def _is_vigem_device(instance_path):
+    """True when the device (or any parent) is enumerated by the ViGEm bus."""
+    cur = str(instance_path or "")
+    for _ in range(10):
+        if not cur:
+            return False
+        if _device_service(cur).lower() == "vigembus":
+            return True
+        cur = _pnp_parent_path(cur) or ""
+    return False
+
+
 class Engine:
     def __init__(self, cfg, status_cb, visual_cb):
         self.cfg = cfg
@@ -636,7 +679,7 @@ class Engine:
                 states.pop(mapping_id, None)
 
     def _hidhide_collect_paths(self):
-        cli = self._hidhide_cli if hasattr(self, "_hidhide_cli") else find_hidhide_cli()
+        cli = self._hidhide_cli or find_hidhide_cli()
         if not cli:
             return []
         self._hidhide_cli = cli
@@ -648,25 +691,40 @@ class Engine:
             data = json.loads(out)
         except Exception:
             return []
-        paths = set()
+        paths = []
+        seen = set()
+
+        def add_path(p):
+            p = str(p or "")
+            if p and p not in seen:
+                seen.add(p)
+                paths.append(p)
+
         containers = data if isinstance(data, list) else [data]
         for cont in containers:
             devices = cont.get("devices", []) if isinstance(cont, dict) else []
             for dev in devices:
                 if not isinstance(dev, dict):
                     continue
-                # Never hide the ViGEm virtual controller: its devices hang off the
-                # virtual USB device with the fixed ViGEmBus serial "18728E7".
-                if str(dev.get("baseContainerDeviceInstancePath", "") or "").upper().endswith("\\18728E7"):
+                if dev.get("present") is False:
+                    continue
+                base = str(dev.get("baseContainerDeviceInstancePath", "") or "")
+                # Never hide the ViGEm virtual controller: all of its devices sit
+                # below the ViGEmBus driver (the real pad hangs off a USB hub).
+                if base and _is_vigem_device(base):
                     continue
                 friendly = (" " + str(cont.get("friendlyName", "")) + " " + " ".join(str(dev.get(k, "")) for k in ("description", "vendor", "product"))).lower()
-                if not ("xbox" in friendly or "xinput" in friendly or str(dev.get("vendor")).lower().find("0x45e") >= 0):
+                if not ("xbox" in friendly or "xinput" in friendly or str(dev.get("vendor", "")).lower().find("0x45e") >= 0):
                     continue
                 for key in ("deviceInstancePath", "baseContainerDeviceInstancePath", "xusbDeviceInstancePath"):
                     v = dev.get(key)
-                    if v:
-                        paths.add(v)
-        return list(paths)
+                    if not v:
+                        continue
+                    add_path(v)
+                    parent = _pnp_parent_path(v)
+                    if parent and "VID_045E&PID_028E" in parent.upper():
+                        add_path(parent)
+        return paths
 
     def _hidhide_apply(self, want):
         """Turn the temporary cloaking on or off. Returns (ok, reason)."""
@@ -678,22 +736,29 @@ class Engine:
             if not want:
                 self._hidhide_remove_locked(cli)
                 return True, "off"
-            if self._hidhide_cloaked:
-                return True, "already"
             run_hidhide(cli, "--app-reg", os.path.abspath(sys.executable))
-            # Paths are collected at startup BEFORE the virtual pad exists, so the
-            # virtual controller is never hidden here. Re-collect only as fallback.
+            # Paths are collected at startup BEFORE the virtual pad exists, and any
+            # ViGEm-bus device is always excluded, so only the real pad is hidden.
             paths = list(self._hidhide_real_paths)
             if not paths and self._vg is None:
                 paths = self._hidhide_collect_paths()
+                self._hidhide_real_paths = list(paths)
             if not paths:
                 return False, "no-paths"
             code, out, err = run_hidhide(cli, "--cloak-state")
             was_on = (code == 0 and "--cloak-on" in (out or ""))
+            hidden = self._hidhide_hidden_paths(cli) or []
+            keep = set(paths)
             args = []
+            for p in hidden:
+                # Drop leftovers pointing at other instances (older sessions,
+                # replaced devnodes or older versions that hid the virtual).
+                if "VID_045E&PID_028E" in p.upper() and p not in keep:
+                    args += ["--dev-unhide", p]
             for p in paths:
                 args += ["--dev-hide", p]
-            args += ["--cloak-on"]
+            if not was_on:
+                args += ["--cloak-on"]
             code, out, err = run_hidhide(cli, *args)
             if code != 0:
                 return False, (err or out or "cli-error")
@@ -719,13 +784,18 @@ class Engine:
     def _hidhide_remove_locked(self, cli):
         if not self._hidhide_cloaked and not self._hidhide_paths:
             return
-        if self._hidhide_paths:
+        hidden = self._hidhide_hidden_paths(cli) or []
+        to_unhide = []
+        for p in list(self._hidhide_paths) + [p for p in hidden if "VID_045E&PID_028E" in p.upper()]:
+            if p not in to_unhide:
+                to_unhide.append(p)
+        if to_unhide:
             args = []
-            for p in self._hidhide_paths:
+            for p in to_unhide:
                 args += ["--dev-unhide", p]
             run_hidhide(cli, *args)
-        hidden = self._hidhide_hidden_paths(cli)
-        if self._hidhide_turned_on or hidden == []:
+        remaining = [p for p in hidden if p not in to_unhide]
+        if self._hidhide_turned_on or not remaining:
             run_hidhide(cli, "--cloak-off")
         self._hidhide_cloaked = False
         self._hidhide_paths = []
@@ -854,11 +924,14 @@ class Engine:
                 time.sleep(0.3)
                 continue
             connected_once = True
-            if cfg.get("hidhide", False) and not self._hidhide_cloaked and not self._hidhide_boot_retry_done and self._hidhide_cli:
-                # HidHide was enabled but there was no real controller at startup:
-                # arm it now that one is connected (also recovers ghost-free paths).
+            if cfg.get("hidhide", False) and not self._hidhide_boot_retry_done and self._hidhide_cli:
+                # (Re)sync HidHide every time the real controller connects: it may
+                # have been absent at startup or return on another port with new
+                # instance paths. Attempted once per connect cycle.
                 self._hidhide_boot_retry_done = True
-                self._hidhide_real_paths = self._hidhide_collect_paths()
+                fresh = self._hidhide_collect_paths()
+                if fresh:
+                    self._hidhide_real_paths = fresh
                 ok, why = self._hidhide_apply(True)
                 if ok:
                     self.status_cb("hidhide_on")
