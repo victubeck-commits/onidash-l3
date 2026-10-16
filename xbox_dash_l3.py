@@ -898,8 +898,21 @@ class App:
         style.configure("TButton", background=PANEL, foreground=LIGHT, bordercolor=BORDER, padding=(12, 8))
         style.map("TButton", background=[("active", CARD)], foreground=[("active", GOLD)])
         style.configure("TEntry", fieldbackground=CARD, background=CARD, foreground=TEXT, bordercolor=BORDER)
-        style.configure("TCombobox", fieldbackground=CARD, background=CARD, foreground=TEXT, bordercolor=BORDER, padding=6)
-        style.configure("TSpinbox", fieldbackground=CARD, background=CARD, foreground=TEXT, bordercolor=BORDER)
+        style.map("TEntry", fieldbackground=[("disabled", PANEL)], foreground=[("disabled", MUTED)])
+        style.configure("TCombobox", fieldbackground=CARD, background=CARD, foreground=TEXT, bordercolor=BORDER, padding=6, arrowcolor=TEXT)
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", CARD), ("disabled", PANEL)],
+                  foreground=[("readonly", TEXT), ("disabled", MUTED)],
+                  selectbackground=[("readonly", CARD), ("!readonly", CARD)],
+                  selectforeground=[("readonly", TEXT), ("!readonly", TEXT)],
+                  background=[("readonly", PANEL), ("active", CARD)],
+                  arrowcolor=[("active", GOLD)])
+        style.configure("TSpinbox", fieldbackground=CARD, background=CARD, foreground=TEXT, bordercolor=BORDER, arrowcolor=TEXT)
+        style.map("TSpinbox", fieldbackground=[("disabled", PANEL)], foreground=[("disabled", MUTED)], arrowcolor=[("active", GOLD)])
+        self.root.option_add("*TCombobox*Listbox.background", CARD)
+        self.root.option_add("*TCombobox*Listbox.foreground", TEXT)
+        self.root.option_add("*TCombobox*Listbox.selectBackground", "#2A3446")
+        self.root.option_add("*TCombobox*Listbox.selectForeground", GOLD)
         style.configure("TCheckbutton", background=BG, foreground=TEXT)
         style.configure("TLabelframe", background=BG, foreground=TEXT)
         style.configure("TLabelframe.Label", background=BG, foreground=GOLD, font=("Segoe UI", 11, "bold"))
@@ -959,7 +972,7 @@ class App:
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(1, weight=1)
         header = tk.Label(parent, text=T(self.lang, "home_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         body.columnconfigure(0, weight=3)
@@ -990,41 +1003,61 @@ class App:
     def _draw_controller(self):
         c = self.canvas
         c.delete("all")
-        c.create_oval(180, 60, 380, 300, fill="#1A202A", outline=BORDER, width=2)
-        c.create_rectangle(230, 90, 330, 270, fill="#1A202A", outline=BORDER, width=0)
-        c.create_rectangle(210, 150, 260, 165, fill="#2A3342", outline=BORDER)
-        c.create_rectangle(230, 130, 245, 180, fill="#2A3342", outline=BORDER)
-        c.create_oval(315, 135, 345, 165, fill="#2A3342", outline=BORDER, tags="B")
-        c.create_oval(345, 165, 375, 195, fill="#2A3342", outline=BORDER, tags="A")
-        c.create_oval(285, 165, 315, 195, fill="#2A3342", outline=BORDER, tags="X")
-        c.create_oval(315, 195, 345, 225, fill="#2A3342", outline=BORDER, tags="Y")
-        c.create_oval(205, 195, 245, 235, fill="#10151D", outline=BORDER)
-        c.create_oval(295, 235, 335, 275, fill="#10151D", outline=BORDER)
-        c.create_text(330, 150, text="B", fill=MUTED, font=("Segoe UI", 9, "bold"))
-        c.create_text(360, 180, text="A", fill=MUTED, font=("Segoe UI", 9, "bold"))
-        c.create_text(300, 180, text="X", fill=MUTED, font=("Segoe UI", 9, "bold"))
-        c.create_text(330, 210, text="Y", fill=MUTED, font=("Segoe UI", 9, "bold"))
-        c.create_text(225, 215, text="L3", fill=MUTED, font=("Segoe UI", 8, "bold"))
-        c.create_text(315, 255, text="R3", fill=MUTED, font=("Segoe UI", 8, "bold"))
+        body = "#1A202A"
+        pad = "#2A3342"
+        points = [170, 150, 195, 115, 240, 105, 280, 100, 320, 100, 360, 105, 405, 115, 430, 150,
+                  440, 200, 420, 285, 385, 320, 340, 300, 300, 250, 260, 250, 220, 300, 175, 320, 140, 285, 130, 200]
+        c.create_polygon(points, smooth=True, fill=body, outline=BORDER, width=2)
+        c.create_rectangle(212, 78, 258, 90, fill=PANEL, outline=BORDER, tags="fLT")
+        c.create_text(235, 84, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
+        c.create_rectangle(312, 78, 358, 90, fill=PANEL, outline=BORDER, tags="fRT")
+        c.create_text(335, 84, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
+        c.create_rectangle(210, 96, 260, 112, fill=PANEL, outline=BORDER, tags="fLB")
+        c.create_text(235, 104, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
+        c.create_rectangle(310, 96, 360, 112, fill=PANEL, outline=BORDER, tags="fRB")
+        c.create_text(335, 104, text="RB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tRB")
+        c.create_oval(253, 122, 269, 138, fill=PANEL, outline=BORDER, tags="fBACK")
+        c.create_text(261, 130, text="\u25c0", fill=MUTED, font=("Segoe UI", 6), tags="tBACK")
+        c.create_oval(301, 122, 317, 138, fill=PANEL, outline=BORDER, tags="fSTART")
+        c.create_text(309, 130, text="\u25b6", fill=MUTED, font=("Segoe UI", 6), tags="tSTART")
+        cx, cy = 208, 185
+        c.create_rectangle(cx - 9, cy - 34, cx + 9, cy - 4, fill=pad, outline=BORDER, tags="fDPAD_UP")
+        c.create_rectangle(cx - 9, cy + 4, cx + 9, cy + 34, fill=pad, outline=BORDER, tags="fDPAD_DOWN")
+        c.create_rectangle(cx - 34, cy - 9, cx - 4, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_LEFT")
+        c.create_rectangle(cx + 4, cy - 9, cx + 34, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_RIGHT")
+        c.create_rectangle(cx - 6, cy - 6, cx + 6, cy + 6, fill="#10151D", outline=BORDER)
+        bx, by = 355, 172
+        for key, dx, dy in (("B", 0, -30), ("A", 30, 0), ("X", -30, 0), ("Y", 0, 30)):
+            c.create_oval(bx + dx - 16, by + dy - 16, bx + dx + 16, by + dy + 16, fill=pad, outline=BORDER, tags="f" + key)
+            c.create_text(bx + dx, by + dy, text=key, fill=MUTED, font=("Segoe UI", 10, "bold"), tags="t" + key)
+        for key, sx, sy in (("LS", 208, 252), ("RS", 352, 252)):
+            c.create_oval(sx - 30, sy - 30, sx + 30, sy + 30, fill="#10151D", outline=BORDER)
+            c.create_oval(sx - 18, sy - 18, sx + 18, sy + 18, fill=pad, outline=BORDER, tags="f" + key)
+            c.create_text(sx, sy, text="L3" if key == "LS" else "R3", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="t" + key)
     def _build_mapping(self, parent):
         parent.columnconfigure(0, weight=1)
-        parent.rowconfigure(2, weight=1)
+        parent.rowconfigure(4, weight=1)
         header = tk.Label(parent, text=T(self.lang, "mapping_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
-        tk.Label(parent, text=T(self.lang, "desc_mapping"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
+        tk.Label(parent, text=T(self.lang, "desc_mapping"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=24, pady=(0, 10))
         toolbar = tk.Frame(parent, bg=BG)
-        toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
+        toolbar.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 6))
         for key, cmd in (("add_mapping", self._add_mapping), ("edit", self._edit_mapping), ("map_toggle", self._toggle_mapping), ("duplicate", self._duplicate_mapping), ("remove", self._remove_mapping)):
             tk.Button(toolbar, text=T(self.lang, key), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
+        presets = tk.Frame(parent, bg=BG)
+        presets.grid(row=3, column=0, sticky="ew", padx=24, pady=(0, 8))
+        tk.Label(presets, text=T(self.lang, "presets_label"), bg=BG, fg=GOLD, font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 10))
+        tk.Button(presets, text=T(self.lang, "preset_ls_double"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=5, command=self._add_preset_double_push).pack(side="left", padx=(0, 8))
+        tk.Button(presets, text=T(self.lang, "preset_b_double"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=5, command=self._add_preset_b_two).pack(side="left")
         self.map_tree = ttk.Treeview(parent, columns=("summary", "status"), show="headings", height=16)
         self.map_tree.heading("summary", text=T(self.lang, "map_summary"))
         self.map_tree.heading("status", text=T(self.lang, "map_status"))
         self.map_tree.column("summary", width=780, anchor="w")
         self.map_tree.column("status", width=120, anchor="center")
-        self.map_tree.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 6))
+        self.map_tree.grid(row=4, column=0, sticky="nsew", padx=24, pady=(0, 6))
         self.map_tree.bind("<Double-1>", lambda e: self._edit_mapping())
         self.map_tree.tag_configure("inactive", foreground=MUTED)
-        tk.Label(parent, text=T(self.lang, "map_hint"), bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=3, column=0, sticky="w", padx=24, pady=(0, 16))
+        tk.Label(parent, text=T(self.lang, "map_hint"), bg=BG, fg=MUTED, font=("Segoe UI", 9)).grid(row=5, column=0, sticky="w", padx=24, pady=(0, 16))
         self._refresh_mappings()
 
     def _active_profile(self):
@@ -1188,13 +1221,44 @@ class App:
         remaining = len(self._current_mappings())
         self._refresh_mappings(min(idx, remaining - 1) if remaining else None)
         self.engine.reset_mapping_state()
+
+    def _add_preset_double_push(self):
+        self._add_preset_mapping(T(self.lang, "preset_ls_double"), {
+            "input": "LS_UP",
+            "condition": {"type": "sequence", "count": 2, "interval_ms": 320, "threshold": 0.78},
+            "mode": "hold",
+            "action": "LS",
+            "tap_ms": 130,
+            "delay": {"enabled": False, "activate_ms": 0, "deactivate_ms": 0},
+        })
+
+    def _add_preset_b_two(self):
+        self._add_preset_mapping(T(self.lang, "preset_b_double"), {
+            "input": "B",
+            "condition": {"type": "sequence", "count": 2, "interval_ms": 320, "threshold": 0.78},
+            "mode": "hold",
+            "action": "LS",
+            "tap_ms": 130,
+            "delay": {"enabled": True, "activate_ms": 350, "deactivate_ms": 0},
+        })
+
+    def _add_preset_mapping(self, name, spec):
+        m = default_mapping()
+        m.update(spec)
+        m["name"] = name
+        mappings = self._current_mappings()
+        m["id"] = self._next_mapping_id(mappings)
+        mappings.append(m)
+        self._sync_mappings()
+        self._refresh_mappings(len(mappings) - 1)
+        self.engine.reset_mapping_state()
     def _build_analog(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "analogs_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
-        tk.Label(parent, text=T(self.lang, "desc_analog"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
+        tk.Label(parent, text=T(self.lang, "desc_analog"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=24, pady=(0, 10))
         container = tk.Frame(parent, bg=BG)
-        container.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
+        container.grid(row=2, column=0, sticky="nsew", padx=24, pady=10)
         container.columnconfigure(0, weight=1)
         container.columnconfigure(1, weight=1)
         self.analog_value_labels = {}
@@ -1250,10 +1314,10 @@ class App:
     def _build_triggers(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "triggers_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
-        tk.Label(parent, text=T(self.lang, "desc_triggers"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
+        tk.Label(parent, text=T(self.lang, "desc_triggers"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=24, pady=(0, 10))
         body = tk.Frame(parent, bg=BG)
-        body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
+        body.grid(row=2, column=0, sticky="nsew", padx=24, pady=10)
         for side, title in (("left", "Left Trigger (LT)"), ("right", "Right Trigger (RT)")):
             card = RoundedCard(body)
             card.pack(fill="x", pady=(0, 12))
@@ -1296,15 +1360,15 @@ class App:
     def _build_profiles(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "profiles_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
-        tk.Label(parent, text=T(self.lang, "desc_profiles"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
+        tk.Label(parent, text=T(self.lang, "desc_profiles"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=24, pady=(0, 10))
         toolbar = tk.Frame(parent, bg=BG)
-        toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
+        toolbar.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 8))
         for key, cmd in (("profile_new", self._new_profile), ("duplicate", self._duplicate_profile), ("profile_import", self._import_profile), ("profile_export", self._export_profile)):
             tk.Button(toolbar, text=T(self.lang, key), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
         self.profile_cards = tk.Frame(parent, bg=BG)
-        self.profile_cards.grid(row=2, column=0, sticky="nsew", padx=24, pady=10)
-        parent.rowconfigure(2, weight=1)
+        self.profile_cards.grid(row=3, column=0, sticky="nsew", padx=24, pady=10)
+        parent.rowconfigure(3, weight=1)
         self._refresh_profiles()
 
     def _refresh_profiles(self):
@@ -1426,10 +1490,10 @@ class App:
     def _build_settings(self, parent):
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "settings_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
-        tk.Label(parent, text=T(self.lang, "desc_settings"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
+        header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 4))
+        tk.Label(parent, text=T(self.lang, "desc_settings"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=24, pady=(0, 10))
         body = tk.Frame(parent, bg=BG)
-        body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
+        body.grid(row=2, column=0, sticky="nsew", padx=24, pady=10)
         L1 = RoundedCard(body)
         L1.pack(fill="x", pady=(0, 12))
         tk.Label(L1, text=T(self.lang, "language"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
@@ -1499,12 +1563,32 @@ class App:
         except Exception:
             pass
         pressed = state.get("pressed", set())
-        for button in ("A", "B", "X", "Y"):
-            color = GOLD if button in pressed else "#2A3342"
-            try:
-                self.canvas.itemconfig(button, fill=color)
-            except Exception:
-                pass
+        c = self.canvas
+        try:
+            for key in ("A", "B", "X", "Y"):
+                on = key in pressed
+                c.itemconfig("f" + key, fill=GOLD if on else "#2A3342")
+                c.itemconfig("t" + key, fill="#101318" if on else MUTED)
+            for key in ("DPAD_UP", "DPAD_DOWN", "DPAD_LEFT", "DPAD_RIGHT"):
+                c.itemconfig("f" + key, fill=GOLD if key in pressed else "#2A3342")
+            for key in ("LB", "RB", "LT", "RT", "BACK", "START"):
+                on = key in pressed
+                c.itemconfig("f" + key, fill=GOLD if on else PANEL)
+                c.itemconfig("t" + key, fill="#101318" if on else MUTED)
+            lx = float(state.get("lx", 0.0) or 0.0)
+            ly = float(state.get("ly", 0.0) or 0.0)
+            rx = float(state.get("rx", 0.0) or 0.0)
+            ry = float(state.get("ry", 0.0) or 0.0)
+            for key, sx, sy, ax, ay in (("LS", 208, 252, lx, ly), ("RS", 352, 252, rx, ry)):
+                on = key in pressed
+                dx = int(ax * 14)
+                dy = -int(ay * 14)
+                c.coords("f" + key, sx + dx - 18, sy + dy - 18, sx + dx + 18, sy + dy + 18)
+                c.coords("t" + key, sx + dx, sy + dy)
+                c.itemconfig("f" + key, fill=GOLD if on else "#2A3342")
+                c.itemconfig("t" + key, fill="#101318" if on else MUTED)
+        except Exception:
+            pass
 
     def _poll_visual(self):
         self.root.after(2000, self._poll_visual)
