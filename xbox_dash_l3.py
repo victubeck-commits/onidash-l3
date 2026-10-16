@@ -529,6 +529,9 @@ class Engine:
         self._hidhide_cloaked = False
         self._hidhide_paths = []
         self._hidhide_turned_on = False
+        self._hidhide_lock = threading.Lock()
+        self._hidhide_real_paths = []
+        self._hidhide_boot_retry_done = False
         self._virtual_slot = None
 
     def set_config(self, cfg):
@@ -655,6 +658,10 @@ class Engine:
             for dev in devices:
                 if not isinstance(dev, dict):
                     continue
+                # Never hide the ViGEm virtual controller: its devices hang off the
+                # virtual USB device with the fixed ViGEmBus serial "18728E7".
+                if str(dev.get("baseContainerDeviceInstancePath", "") or "").upper().endswith("\\18728E7"):
+                    continue
                 friendly = (" " + str(cont.get("friendlyName", "")) + " " + " ".join(str(dev.get(k, "")) for k in ("description", "vendor", "product"))).lower()
                 if not ("xbox" in friendly or "xinput" in friendly or str(dev.get("vendor")).lower().find("0x45e") >= 0):
                     continue
@@ -664,45 +671,129 @@ class Engine:
                         paths.add(v)
         return list(paths)
 
-    def _hidhide_cloak(self, cfg):
-        if not cfg.get("hidhide", False):
-            return
-        cli = find_hidhide_cli()
-        if not cli:
-            return
-        self._hidhide_cli = cli
-        code, out, err = run_hidhide(cli, "--cloak-state")
-        self._hidhide_turned_on = ("--cloak-off" in (out or ""))
-        self._hidhide_paths = self._hidhide_collect_paths()
-        if not self._hidhide_paths:
-            return
-        args = []
-        for p in self._hidhide_paths:
-            args += ["--dev-hide", p]
-        args += ["--cloak-on"]
-        run_hidhide(cli, *args)
-        self._hidhide_cloaked = True
+    def _hidhide_apply(self, want):
+        """Turn the temporary cloaking on or off. Returns (ok, reason)."""
+        with self._hidhide_lock:
+            cli = self._hidhide_cli or find_hidhide_cli()
+            if not cli:
+                return False, "no-cli"
+            self._hidhide_cli = cli
+            if not want:
+                self._hidhide_remove_locked(cli)
+                return True, "off"
+            if self._hidhide_cloaked:
+                return True, "already"
+            run_hidhide(cli, "--app-reg", os.path.abspath(sys.executable))
+            # Paths are collected at startup BEFORE the virtual pad exists, so the
+            # virtual controller is never hidden here. Re-collect only as fallback.
+            paths = list(self._hidhide_real_paths)
+            if not paths and self._vg is None:
+                paths = self._hidhide_collect_paths()
+            if not paths:
+                return False, "no-paths"
+            code, out, err = run_hidhide(cli, "--cloak-state")
+            was_on = (code == 0 and "--cloak-on" in (out or ""))
+            args = []
+            for p in paths:
+                args += ["--dev-hide", p]
+            args += ["--cloak-on"]
+            code, out, err = run_hidhide(cli, *args)
+            if code != 0:
+                return False, (err or out or "cli-error")
+            self._hidhide_paths = paths
+            self._hidhide_turned_on = not was_on
+            self._hidhide_cloaked = True
+            return True, "on"
 
-    def _hidhide_uncloak(self):
-        cli = self._hidhide_cli or find_hidhide_cli()
-        if not cli or not self._hidhide_cloaked:
+    def _hidhide_hidden_paths(self, cli):
+        code, out, err = run_hidhide(cli, "--dev-list")
+        if code != 0:
+            return None
+        paths = []
+        for line in (out or "").splitlines():
+            line = line.strip()
+            if line.startswith("--dev-hide"):
+                first = line.find("\"")
+                last = line.rfind("\"")
+                if 0 <= first < last:
+                    paths.append(line[first + 1:last])
+        return paths
+
+    def _hidhide_remove_locked(self, cli):
+        if not self._hidhide_cloaked and not self._hidhide_paths:
             return
         if self._hidhide_paths:
             args = []
             for p in self._hidhide_paths:
                 args += ["--dev-unhide", p]
             run_hidhide(cli, *args)
-        if self._hidhide_turned_on:
+        hidden = self._hidhide_hidden_paths(cli)
+        if self._hidhide_turned_on or hidden == []:
             run_hidhide(cli, "--cloak-off")
         self._hidhide_cloaked = False
         self._hidhide_paths = []
         self._hidhide_turned_on = False
+
+    def _hidhide_uncloak(self):
+        with self._hidhide_lock:
+            cli = self._hidhide_cli or find_hidhide_cli()
+            if cli and (self._hidhide_cloaked or self._hidhide_paths):
+                self._hidhide_remove_locked(cli)
+
+    def _hidhide_heal(self, cli):
+        """Undo leftovers from a previous session that was killed while cloaking was on."""
+        code, out, err = run_hidhide(cli, "--cloak-state")
+        if code != 0 or "--cloak-on" not in (out or ""):
+            return
+        hidden = self._hidhide_hidden_paths(cli)
+        if not hidden:
+            return
+        ours = [p for p in hidden if "VID_045E&PID_028E" in p.upper()]
+        if not ours:
+            return
+        args = []
+        for p in ours:
+            args += ["--dev-unhide", p]
+        run_hidhide(cli, *args)
+        if len(ours) == len(hidden):
+            run_hidhide(cli, "--cloak-off")
+
+    def _hidhide_bootstrap(self, cfg):
+        cli = find_hidhide_cli()
+        if not cli:
+            return
+        self._hidhide_cli = cli
+        run_hidhide(cli, "--app-reg", os.path.abspath(sys.executable))
+        self._hidhide_real_paths = self._hidhide_collect_paths()
+        if cfg.get("hidhide", False):
+            ok, why = self._hidhide_apply(True)
+            if not ok and why != "no-paths":
+                self.status_cb("hidhide_fail")
+        else:
+            self._hidhide_heal(cli)
+
+    def apply_hidhide_async(self):
+        """Apply the current hidhide setting right away, without restarting the app."""
+        def work():
+            with self._lock:
+                want = bool(self.cfg.get("hidhide", False))
+            if want:
+                ok, why = self._hidhide_apply(True)
+                if ok:
+                    self.status_cb("hidhide_on")
+                elif why == "no-paths":
+                    self.status_cb("hidhide_deferred")
+                else:
+                    self.status_cb("hidhide_fail")
+            else:
+                self._hidhide_apply(False)
+                self.status_cb("hidhide_off")
+        threading.Thread(target=work, daemon=True).start()
     def _loop(self):
         self.status_cb("starting")
         with self._lock:
             cfg0 = json.loads(json.dumps(self.cfg))
-        if cfg0.get("hidhide", False):
-            self._hidhide_cloak(cfg0)
+        self._hidhide_bootstrap(cfg0)
         slots_before = list(XInput.get_connected())
         try:
             vgpad = self._ensure_vg()
@@ -745,6 +836,7 @@ class Engine:
                 if idx >= len(connected_list) or not connected_list[idx]:
                     idx = None
             if idx is None:
+                self._hidhide_boot_retry_done = False
                 if connected_once:
                     if auto:
                         self.status_cb("real_disconnected_auto")
@@ -765,6 +857,18 @@ class Engine:
                 time.sleep(0.3)
                 continue
             connected_once = True
+            if cfg.get("hidhide", False) and not self._hidhide_cloaked and not self._hidhide_boot_retry_done and self._hidhide_cli:
+                # HidHide was enabled but there was no real controller at startup:
+                # arm it now that one is connected (also recovers ghost-free paths).
+                self._hidhide_boot_retry_done = True
+                self._hidhide_real_paths = self._hidhide_collect_paths()
+                ok, why = self._hidhide_apply(True)
+                if ok:
+                    self.status_cb("hidhide_on")
+                elif why == "no-paths":
+                    self.status_cb("hidhide_deferred")
+                else:
+                    self.status_cb("hidhide_fail")
             try:
                 xstate = XInput.get_state(idx)
                 left, right = XInput.get_thumb_values(xstate)
@@ -1540,14 +1644,24 @@ class App:
         vc = tk.BooleanVar(value=self.cfg.get("virtual_controller", True))
         tk.Checkbutton(C1, text=T(self.lang, "create_virtual"), variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
         hh = tk.BooleanVar(value=self.cfg.get("hidhide", False))
-        tk.Checkbutton(C1, text=T(self.lang, "use_hidhide"), variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("hidhide", hh.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Checkbutton(C1, text=T(self.lang, "use_hidhide"), variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._toggle_hidhide(hh.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Label(C1, text=T(self.lang, "hidhide_help"), bg=CARD, fg=MUTED, font=("Segoe UI", 9), wraplength=560, justify="left").pack(anchor="w", padx=16, pady=(0, 8))
         st = tk.BooleanVar(value=self.cfg.get("startup", False))
         tk.Checkbutton(C1, text=T(self.lang, "start_with_app"), variable=st, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("startup", st.get())).pack(anchor="w", padx=16, pady=(4, 12))
         D1 = RoundedCard(body)
         D1.pack(fill="x", pady=(0, 12))
         tk.Label(D1, text=T(self.lang, "diagnostics"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
         tk.Button(D1, text=T(self.lang, "test_ls"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self.engine.trigger_once).pack(anchor="w", padx=16, pady=4)
-        tk.Button(D1, text=T(self.lang, "save_settings"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda: save_config(self.cfg)).pack(anchor="w", padx=16, pady=(4, 12))
+        tk.Button(D1, text=T(self.lang, "save_settings"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._save_settings_clicked).pack(anchor="w", padx=16, pady=(4, 12))
+
+    def _toggle_hidhide(self, value):
+        self._set_setting("hidhide", value)
+        self.engine.apply_hidhide_async()
+
+    def _save_settings_clicked(self):
+        save_config(self.cfg)
+        self.engine.set_config(self.cfg)
+        self._status_callback("settings_saved")
 
     def _set_setting(self, key, value):
         self.cfg[key] = value
