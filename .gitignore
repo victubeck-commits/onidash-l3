@@ -7,3 +7,4 @@ XboxDashL3.spec
 *.tmp
 .vscode/
 config.json
+*.zip
