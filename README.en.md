@@ -11,6 +11,7 @@ Running in games like Onimusha can rely on double-tapping the left stick or pres
 - Real-time reading of the real Xbox controller via XInput.
 - Virtual Xbox controller via ViGEmBus/vgamepad.
 - Mirroring of all axes and buttons to the virtual controller.
+- Automatic detection of the real controller slot ("Automatic" option), with manual choice from 0 to 3.
 - Visual mapping editor: pick the physical input (with a "Detect input" button that reads the press for you), the target action and the activation mode using selectors only - no code to type.
 - Activation modes: Hold, Single tap, Toggle, Repeat and Analog threshold.
 - Repeat Nx per activation (e.g. exactly 3 times per tap), with interval, press duration and an optional continuous repeat (off by default).
@@ -46,7 +47,7 @@ Open `dist\OniDashL3\OniDashL3.exe` or the `OniDash L3` shortcut.
 
 Steps:
 1. Connect the Xbox controller via USB.
-2. In Settings, pick the XInput slot of the controller.
+2. In Settings, pick the XInput slot of the controller (or leave it on "Automatic").
 3. In Mapping, click "Add mapping".
 4. Choose the input (or use "Detect input" and press it), the action, the mode and options.
 5. Use "Test mapping" to check, then "Save".

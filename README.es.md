@@ -11,6 +11,7 @@ Correr en juegos como Onimusha puede depender de tocar dos veces el stick izquie
 - Lectura en tiempo real del controlador Xbox real mediante XInput.
 - Controlador Xbox virtual mediante ViGEmBus/vgamepad.
 - Espejo de todos los ejes y botones al controlador virtual.
+- Deteccion automatica del slot del controlador real (opcion "Automatico"), con eleccion manual de 0 a 3.
 - Editor visual de mapeos: elige la entrada fisica (con boton "Detectar entrada"), la accion de destino y el modo de activacion, todo con selectores - sin escribir codigo.
 - Modos de activacion: Mantener, Toque unico, Alternar, Repetir y Umbral analogico.
 - Repetir Nx por activacion (ej.: exactamente 3 veces por toque), con intervalo, duracion de pulsacion y repetecion continua opcional (desactivada por defecto).
@@ -46,7 +47,7 @@ Abre `dist\OniDashL3\OniDashL3.exe` o el acceso directo `OniDash L3`.
 
 Pasos:
 1. Conecta el controlador Xbox por USB.
-2. En Configuracion, elige el slot XInput del controlador.
+2. En Configuracion, elige el slot XInput del controlador (o deja en "Automatico").
 3. En Mapeo, haz clic en "Anadir mapeo".
 4. Elige la entrada (o usa "Detectar entrada" y pulsala), la accion, el modo y las opciones.
 5. Usa "Probar mapeo" para comprobar; luego "Guardar".

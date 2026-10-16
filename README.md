@@ -11,6 +11,7 @@ Jogos como Onimusha: Way of the Sword usam o duplo toque do analogico esquerdo o
 - Leitura em tempo real do controle Xbox real via XInput.
 - Controle Xbox virtual via ViGEmBus/vgamepad.
 - Espelhamento de todos os eixos e botoes para o controle virtual.
+- Deteccao automatica do slot do controle real (opcao "Automatico"), com escolha manual de 0 a 3.
 - Editor visual de mapeamentos: escolha a entrada fisica (com botao "Detectar entrada"), a acao de destino e o modo de ativacao, tudo por seletores - sem digitar codigo.
 - Modos de ativacao: Segurar, Toque unico, Alternar, Repetir e Ativar por limiar analogico.
 - Repetir Nx por ativacao (ex.: exatamente 3 vezes por toque), com intervalo, duracao do pressionamento e opcao de repeticao continua (desligada por padrao).
@@ -46,7 +47,7 @@ Abra `dist\OniDashL3\OniDashL3.exe` ou o atalho `OniDash L3`.
 
 Passos:
 1. Conecte o controle Xbox por USB.
-2. Em Configuracoes, escolha o slot XInput do controle.
+2. Em Configuracoes, escolha o slot XInput do controle (ou deixe em "Automatico").
 3. Em Mapeamento, clique em "Adicionar mapeamento".
 4. Escolha a entrada (ou use "Detectar entrada" e pressione o botao/analogico), a acao, o modo e as opcoes.
 5. Use "Testar mapeamento" para conferir; depois "Salvar".

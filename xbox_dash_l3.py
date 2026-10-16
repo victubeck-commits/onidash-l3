@@ -80,7 +80,7 @@ def config_defaults(lang=None):
         lang = "es" if loc.startswith("es") else "en" if loc.startswith("en") else "pt"
     return {
         "language": lang,
-        "controller_index": 0,
+        "controller_index": -1,
         "virtual_controller": True,
         "hidhide": False,
         "startup": False,
@@ -511,6 +511,7 @@ class Engine:
         self._hidhide_cloaked = False
         self._hidhide_paths = []
         self._hidhide_turned_on = False
+        self._virtual_slot = None
 
     def set_config(self, cfg):
         with self._lock:
@@ -684,27 +685,58 @@ class Engine:
             cfg0 = json.loads(json.dumps(self.cfg))
         if cfg0.get("hidhide", False):
             self._hidhide_cloak(cfg0)
+        slots_before = list(XInput.get_connected())
         try:
             vgpad = self._ensure_vg()
         except Exception as e:
             self.status_cb("virtual_error", e=e)
             self._hidhide_uncloak()
             return
+        self._virtual_slot = None
+        detect_deadline = time.time() + 2.5
+        while self._running and time.time() < detect_deadline:
+            current = XInput.get_connected()
+            for i in range(4):
+                if current[i] and (i >= len(slots_before) or not slots_before[i]):
+                    self._virtual_slot = i
+                    break
+            if self._virtual_slot is not None:
+                break
+            time.sleep(0.15)
         connected_once = False
         states = self._state.setdefault("mappings", {})
         last_visual = 0.0
         while self._running:
             with self._lock:
                 cfg = json.loads(json.dumps(self.cfg))
-            idx = max(0, min(3, int(cfg.get("controller_index", 0))))
+            try:
+                want_idx = int(cfg.get("controller_index", -1))
+            except Exception:
+                want_idx = -1
             poll = max(0.004, int(cfg.get("poll_ms", 8)) / 1000.0)
             connected_list = XInput.get_connected()
-            real_ok = bool(connected_list[idx]) if idx < len(connected_list) else False
-            if not real_ok:
+            auto = want_idx < 0
+            idx = None
+            if auto:
+                for i, c in enumerate(connected_list):
+                    if c and i != self._virtual_slot:
+                        idx = i
+                        break
+            else:
+                idx = max(0, min(3, want_idx))
+                if idx >= len(connected_list) or not connected_list[idx]:
+                    idx = None
+            if idx is None:
                 if connected_once:
-                    self.status_cb("real_disconnected", idx=idx)
+                    if auto:
+                        self.status_cb("real_disconnected_auto")
+                    else:
+                        self.status_cb("real_disconnected", idx=max(0, min(3, want_idx)))
                 else:
-                    self.status_cb("waiting_real", idx=idx)
+                    if auto:
+                        self.status_cb("waiting_real_auto")
+                    else:
+                        self.status_cb("waiting_real", idx=max(0, min(3, want_idx)))
                 try:
                     vgpad.reset()
                     vgpad.update()
@@ -1411,10 +1443,15 @@ class App:
         dev_row = tk.Frame(C1, bg=CARD)
         dev_row.pack(fill="x", padx=16, pady=4)
         tk.Label(dev_row, text=T(self.lang, "xinput_slot"), bg=CARD, fg=TEXT).pack(side="left")
-        sc = ttk.Spinbox(dev_row, from_=0, to=3, width=6)
-        sc.set(self.cfg.get("controller_index", 0))
+        try:
+            cur_idx = int(self.cfg.get("controller_index", -1))
+        except Exception:
+            cur_idx = -1
+        auto_label = T(self.lang, "slot_auto")
+        sc = ttk.Combobox(dev_row, values=[auto_label, "0", "1", "2", "3"], state="readonly", width=14)
+        sc.set(auto_label if cur_idx < 0 else str(cur_idx))
         sc.pack(side="right")
-        sc.bind("<FocusOut>", lambda e: self._set_setting("controller_index", int(sc.get() or 0)))
+        sc.bind("<<ComboboxSelected>>", lambda e: self._set_setting("controller_index", -1 if sc.get() == auto_label else int(sc.get())))
         vc = tk.BooleanVar(value=self.cfg.get("virtual_controller", True))
         tk.Checkbutton(C1, text=T(self.lang, "create_virtual"), variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, activebackground=CARD, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
         hh = tk.BooleanVar(value=self.cfg.get("hidhide", False))
