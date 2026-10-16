@@ -675,8 +675,8 @@ class App:
         subtitle.pack(anchor="w", padx=18, pady=(0, 16))
         self.status_label = tk.Label(self.sidebar, text="Stopped", bg=PANEL, fg=DANGER, font=("Segoe UI", 9, "bold"))
         self.status_label.pack(anchor="w", padx=18, pady=(0, 14))
-        for key, label in [("home", "Home"), ("mapping", "Mapping"), ("analog", "Analogs"), ("triggers", "Triggers"), ("profiles", "Profiles"), ("settings", "Settings")]:
-            btn = tk.Button(self.sidebar, text=label, bg=PANEL, fg=TEXT, relief="flat", anchor="w", padx=18, pady=10,
+        for key, label_key in [("home", "nav_home"), ("mapping", "nav_mapping"), ("analog", "nav_analog"), ("triggers", "nav_triggers"), ("profiles", "nav_profiles"), ("settings", "nav_settings")]:
+            btn = tk.Button(self.sidebar, text=T(self.lang, label_key), bg=PANEL, fg=TEXT, relief="flat", anchor="w", padx=18, pady=10,
                             activebackground=CARD, activeforeground=GOLD, command=lambda k=key: self._show_page(k))
             btn.pack(fill="x")
 
@@ -686,7 +686,7 @@ class App:
     def _build_home(self, parent):
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(1, weight=1)
-        header = tk.Label(parent, text="Home", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "home_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
@@ -701,18 +701,18 @@ class App:
         right.grid(row=0, column=1, sticky="nsew")
         self.card_profile = RoundedCard(right)
         self.card_profile.pack(fill="x", pady=(0, 12))
-        tk.Label(self.card_profile, text="Active Profile", bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
+        tk.Label(self.card_profile, text=T(self.lang, "active_profile"), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
         self.profile_value = tk.Label(self.card_profile, text=self.profile_name, bg=CARD, fg=GOLD, font=("Segoe UI", 16, "bold"))
         self.profile_value.pack(anchor="w", padx=16, pady=(0, 12))
         self.card_conn = RoundedCard(right)
         self.card_conn.pack(fill="x", pady=(0, 12))
-        tk.Label(self.card_conn, text="Controller Status", bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
+        tk.Label(self.card_conn, text=T(self.lang, "controller_status"), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
         self.conn_value = tk.Label(self.card_conn, text="Checking...", bg=CARD, fg=TEXT, font=("Segoe UI", 12, "bold"))
         self.conn_value.pack(anchor="w", padx=16, pady=(0, 12))
         self.card_mapper = RoundedCard(right)
         self.card_mapper.pack(fill="x")
-        tk.Label(self.card_mapper, text="Quick Actions", bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
-        for lbl, page in [("Open Mapping", "mapping"), ("Edit Analogs", "analog"), ("Profiles", "profiles")]:
+        tk.Label(self.card_mapper, text=T(self.lang, "quick_actions"), bg=CARD, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=16, pady=(12, 0))
+        for lbl, page in [(T(self.lang, "open_mapping"), "mapping"), (T(self.lang, "edit_analogs"), "analog"), (T(self.lang, "profiles"), "profiles")]:
             b = tk.Button(self.card_mapper, text=lbl, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda p=page: self._show_page(p))
             b.pack(fill="x", padx=16, pady=4)
         tk.Frame(self.card_mapper, bg=CARD, height=8).pack()
@@ -742,7 +742,7 @@ class App:
     def _build_mapping(self, parent):
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(1, weight=1)
-        header = tk.Label(parent, text="Mapping", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "mapping_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
@@ -760,7 +760,7 @@ class App:
 
     def _build_analog(self, parent):
         parent.columnconfigure(0, weight=1)
-        header = tk.Label(parent, text="Analogs", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "analogs_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         container = tk.Frame(parent, bg=BG)
         container.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
@@ -820,7 +820,7 @@ class App:
 
     def _build_profiles(self, parent):
         parent.columnconfigure(0, weight=1)
-        header = tk.Label(parent, text="Profiles", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "profiles_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
@@ -920,14 +920,14 @@ class App:
 
     def _build_settings(self, parent):
         parent.columnconfigure(0, weight=1)
-        header = tk.Label(parent, text="Settings", bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
+        header = tk.Label(parent, text=T(self.lang, "settings_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         # language
         L1 = RoundedCard(body)
         L1.pack(fill="x", pady=(0, 12))
-        tk.Label(L1, text="Language", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+        tk.Label(L1, text=T(self.lang, "language"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
         lang = ttk.Combobox(L1, values=["Portugues", "English", "Espanol"], state="readonly", width=28)
         lang.set({"pt": "Portugues", "en": "English", "es": "Espanol"}.get(self.lang, "Portugues"))
         lang.pack(anchor="w", padx=16, pady=(0, 12))
@@ -935,7 +935,7 @@ class App:
         # controller
         C1 = RoundedCard(body)
         C1.pack(fill="x", pady=(0, 12))
-        tk.Label(C1, text="Controller And Virtual", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+        tk.Label(C1, text=T(self.lang, "controller_and_virtual"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
         dev_row = tk.Frame(C1, bg=CARD)
         dev_row.pack(fill="x", padx=16, pady=4)
         tk.Label(dev_row, text="XInput Slot", bg=CARD, fg=TEXT).pack(side="left")
@@ -944,25 +944,32 @@ class App:
         sc.pack(side="right")
         sc.bind("<FocusOut>", lambda e: self._set_setting("controller_index", int(sc.get())))
         vc = tk.BooleanVar(value=self.cfg.get("virtual_controller", True))
-        tk.Checkbutton(C1, text="Create virtual controller", variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Checkbutton(C1, text=T(self.lang, "create_virtual"), variable=vc, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("virtual_controller", vc.get())).pack(anchor="w", padx=16, pady=4)
         hh = tk.BooleanVar(value=self.cfg.get("hidhide", False))
-        tk.Checkbutton(C1, text="Use HidHide (hide real controller)", variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("hidhide", hh.get())).pack(anchor="w", padx=16, pady=4)
+        tk.Checkbutton(C1, text=T(self.lang, "use_hidhide"), variable=hh, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("hidhide", hh.get())).pack(anchor="w", padx=16, pady=4)
         st = tk.BooleanVar(value=self.cfg.get("startup", False))
-        tk.Checkbutton(C1, text="Start engine with app", variable=st, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("startup", st.get())).pack(anchor="w", padx=16, pady=(4, 12))
+        tk.Checkbutton(C1, text=T(self.lang, "start_with_app"), variable=st, bg=CARD, fg=TEXT, selectcolor=PANEL, command=lambda: self._set_setting("startup", st.get())).pack(anchor="w", padx=16, pady=(4, 12))
         # diagnostics
         D1 = RoundedCard(body)
         D1.pack(fill="x", pady=(0, 12))
-        tk.Label(D1, text="Diagnostics", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
-        tk.Button(D1, text="Test LS Click", bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self.engine.trigger_once).pack(anchor="w", padx=16, pady=4)
-        tk.Button(D1, text="Save Settings", bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda: save_config(self.cfg)).pack(anchor="w", padx=16, pady=(4, 12))
+        tk.Label(D1, text=T(self.lang, "diagnostics"), bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+        tk.Button(D1, text=T(self.lang, "test_ls"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self.engine.trigger_once).pack(anchor="w", padx=16, pady=4)
+        tk.Button(D1, text=T(self.lang, "save_settings"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=lambda: save_config(self.cfg)).pack(anchor="w", padx=16, pady=(4, 12))
 
     def _set_setting(self, key, value):
+        old_lang = self.lang
         self.cfg[key] = value
         save_config(self.cfg)
         self.engine.set_config(self.cfg)
         if key == "language":
             self.lang = value
-            self.status_label.config(text="Language changed")
+            for w in self.root.winfo_children():
+                w.destroy()
+            self._build_style()
+            self._build_layout()
+            self.engine.status_cb = self._status_callback
+        else:
+            pass
 
     def _add_mapping(self):
         mappings = self.cfg.setdefault("mappings", [])
