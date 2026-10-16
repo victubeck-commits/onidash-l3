@@ -750,8 +750,8 @@ class App:
         for text, cmd in [(T(self.lang, "add_mapping"), self._add_mapping), (T(self.lang, "edit"), self._edit_mapping), (T(self.lang, "duplicate"), self._duplicate_mapping), (T(self.lang, "remove"), self._remove_mapping)]:
             tk.Button(toolbar, text=text, bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=cmd).pack(side="left", padx=(0, 8))
         self.map_tree = ttk.Treeview(parent, columns=("input", "action", "mode", "configure"), show="headings", height=16)
-        for col, head in (("input", "Physical Input"), ("action", "Assigned Action"), ("mode", "Mode"), ("configure", "Configure")):
-            self.map_tree.heading(col, text=head)
+        for col, key in (("input", "physical_input"), ("action", "assigned_action"), ("mode", "mode"), ("configure", "configure")):
+            self.map_tree.heading(col, text=T(self.lang, key))
             self.map_tree.column(col, width=260 if col in ("input", "action") else 160)
         self.map_tree.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 16))
         parent.rowconfigure(2, weight=1)
@@ -773,7 +773,7 @@ class App:
             card.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 8, 0 if col == 1 else 8))
             tk.Label(card, text=side.title() + " Stick", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
             cfg = self.cfg["analog"][side]
-            for label, key, frm, to in [("Deadzone", "deadzone", 0, 50), ("Sensitivity x100", "sensitivity", 25, 250), ("Curve x100", "curve", 25, 300), ("Threshold x100", "threshold", 25, 98)]:
+            for label, key, frm, to in [(T(self.lang, "deadzone") + " x1/x100", "deadzone", 0, 50), (T(self.lang, "sensitivity") + " x100", "sensitivity", 25, 250), (T(self.lang, "curve") + " x100", "curve", 25, 300), (T(self.lang, "threshold") + " x100", "threshold", 25, 98)]:
                 row = tk.Frame(card, bg=CARD)
                 row.pack(fill="x", padx=16, pady=4)
                 tk.Label(row, text=label, bg=CARD, fg=TEXT, width=20, anchor="w").pack(side="left")
@@ -805,7 +805,7 @@ class App:
             card.pack(fill="x", pady=(0, 12))
             tk.Label(card, text=side.title() + " Trigger", bg=CARD, fg=GOLD, font=("Segoe UI", 12, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
             cfg = self.cfg["triggers"][side]
-            for label, key in (("Deadzone", "deadzone"), ("Sensitivity", "sensitivity")):
+            for label, key in (((T(self.lang, "deadzone"), "deadzone"), (T(self.lang, "sensitivity"), "sensitivity"))):
                 row = tk.Frame(card, bg=CARD)
                 row.pack(fill="x", padx=16, pady=4)
                 tk.Label(row, text=label, bg=CARD, fg=TEXT, width=16, anchor="w").pack(side="left")
