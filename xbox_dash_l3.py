@@ -744,6 +744,7 @@ class App:
         parent.rowconfigure(1, weight=1)
         header = tk.Label(parent, text=T(self.lang, "mapping_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        tk.Label(parent, text=T(self.lang, "desc_mapping"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
         for text, cmd in [(T(self.lang, "add_mapping"), self._add_mapping), (T(self.lang, "edit"), self._edit_mapping), (T(self.lang, "duplicate"), self._duplicate_mapping), (T(self.lang, "remove"), self._remove_mapping)]:
@@ -762,6 +763,7 @@ class App:
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "analogs_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        tk.Label(parent, text=T(self.lang, "desc_analog"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         container = tk.Frame(parent, bg=BG)
         container.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         container.columnconfigure(0, weight=1)
@@ -795,6 +797,7 @@ class App:
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "triggers_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        tk.Label(parent, text=T(self.lang, "desc_triggers"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         for side in ("left", "right"):
@@ -822,6 +825,7 @@ class App:
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "profiles_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        tk.Label(parent, text=T(self.lang, "desc_profiles"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         toolbar = tk.Frame(parent, bg=BG)
         toolbar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 8))
         for text, cmd in [("New", self._new_profile), ("Duplicate", self._duplicate_profile), ("Import", self._import_profile), ("Export", self._export_profile)]:
@@ -922,6 +926,7 @@ class App:
         parent.columnconfigure(0, weight=1)
         header = tk.Label(parent, text=T(self.lang, "settings_title"), bg=BG, fg=LIGHT, font=("Segoe UI", 18, "bold"))
         header.grid(row=0, column=0, sticky="w", padx=24, pady=(20, 10))
+        tk.Label(parent, text=T(self.lang, "desc_settings"), bg=BG, fg=MUTED, wraplength=900, justify="left", font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=24, pady=(58, 0))
         body = tk.Frame(parent, bg=BG)
         body.grid(row=1, column=0, sticky="nsew", padx=24, pady=10)
         # language

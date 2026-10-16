@@ -106,6 +106,11 @@ TRANSLATIONS = {
         "duplicate": "Duplicar",
         "remove": "Remover",
         "refresh": "Atualizar",
+        "desc_mapping": "Defina entradas fisicas e acoes virtuais. Cada linha pode ser editada, duplicada ou removida.",
+        "desc_analog": "Configure sensibilidade, zona morta, curvas e inversao dos eixos.",
+        "desc_triggers": "Configure LT e RT individualmente.",
+        "desc_profiles": "Crie, duplique, importe e exporte perfis.",
+        "desc_settings": "Idioma, dispositivo, controle virtual, HidHide e diagnostico.",
     },
     "en": {
         "app_title": "OniDash L3",
@@ -197,6 +202,11 @@ TRANSLATIONS = {
         "duplicate": "Duplicate",
         "remove": "Remove",
         "refresh": "Refresh",
+        "desc_mapping": "Define physical inputs and virtual actions. Each row can be edited, duplicated or removed.",
+        "desc_analog": "Configure sensitivity, deadzone, curves and axis inversion.",
+        "desc_triggers": "Configure LT and RT individually.",
+        "desc_profiles": "Create, duplicate, import and export profiles.",
+        "desc_settings": "Language, device, virtual controller, HidHide and diagnostics.",
     },
     "es": {
         "app_title": "OniDash L3",
@@ -286,6 +296,11 @@ TRANSLATIONS = {
         "remove": "Eliminar",
         "refresh": "Actualizar",
 },
+        "desc_mapping": "Define entradas fisicas y acciones virtuales. Cada fila se puede editar, duplicar o eliminar.",
+        "desc_analog": "Configura sensibilidad, zona muerta, curvas e inversion de ejes.",
+        "desc_triggers": "Configura LT y RT individualmente.",
+        "desc_profiles": "Crea, duplica, importa y exporta perfiles.",
+        "desc_settings": "Idioma, dispositivo, controlador virtual, HidHide y diagnostico.",
 }
 
 
