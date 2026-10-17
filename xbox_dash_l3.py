@@ -1198,45 +1198,48 @@ class App:
         body = "#1A202A"
         pad = "#2A3342"
         # symmetric Xbox-style body (centered at x=280)
-        points = [160, 140, 190, 100, 280, 88, 370, 100, 400, 140,
-                  412, 190, 400, 290, 365, 335, 320, 305, 300, 255,
-                  280, 245, 260, 255, 240, 305, 195, 335, 160, 290, 148, 190]
+        points = [150, 130, 185, 90, 280, 78, 375, 90, 410, 130,
+                  425, 180, 410, 280, 370, 320, 325, 295, 300, 250,
+                  280, 240, 260, 250, 235, 295, 190, 320, 150, 280, 135, 180]
         c.create_polygon(points, smooth=True, fill=body, outline=BORDER, width=2)
+        # subtle top highlight
+        c.create_polygon([185, 90, 280, 78, 375, 90, 360, 96, 280, 86, 200, 96],
+                         smooth=True, fill="#222A36", outline="")
         # shoulders (symmetric around x=280)
-        c.create_rectangle(175, 78, 235, 90, fill=PANEL, outline=BORDER, tags="fLT")
-        c.create_text(205, 84, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
-        c.create_rectangle(325, 78, 385, 90, fill=PANEL, outline=BORDER, tags="fRT")
-        c.create_text(355, 84, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
-        c.create_rectangle(180, 96, 230, 112, fill=PANEL, outline=BORDER, tags="fLB")
-        c.create_text(205, 104, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
-        c.create_rectangle(330, 96, 380, 112, fill=PANEL, outline=BORDER, tags="fRB")
-        c.create_text(355, 104, text="RB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tRB")
-        # analog trigger bars (fill grows with the trigger value)
-        c.create_rectangle(190, 114, 220, 146, fill="#10151D", outline=BORDER, tags="trigbgLT")
-        c.create_rectangle(192, 146, 218, 146, fill=GOLD, outline="", tags="trigfillLT")
-        c.create_rectangle(340, 114, 370, 146, fill="#10151D", outline=BORDER, tags="trigbgRT")
-        c.create_rectangle(342, 146, 368, 146, fill=GOLD, outline="", tags="trigfillRT")
+        c.create_rectangle(155, 68, 215, 82, fill=PANEL, outline=BORDER, tags="fLT")
+        c.create_text(185, 75, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
+        c.create_rectangle(345, 68, 405, 82, fill=PANEL, outline=BORDER, tags="fRT")
+        c.create_text(375, 75, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
+        c.create_rectangle(160, 86, 210, 102, fill=PANEL, outline=BORDER, tags="fLB")
+        c.create_text(185, 94, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
+        c.create_rectangle(350, 86, 400, 102, fill=PANEL, outline=BORDER, tags="fRB")
+        c.create_text(375, 94, text="RB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tRB")
+        # analog trigger bars (vertical, on the outer sides)
+        c.create_rectangle(138, 100, 148, 220, fill="#10151D", outline=BORDER, tags="trigbgLT")
+        c.create_rectangle(138, 220, 148, 220, fill=GOLD, outline="", tags="trigfillLT")
+        c.create_rectangle(412, 100, 422, 220, fill="#10151D", outline=BORDER, tags="trigbgRT")
+        c.create_rectangle(412, 220, 422, 220, fill=GOLD, outline="", tags="trigfillRT")
         # back / start (symmetric around x=280)
-        c.create_oval(250, 120, 266, 136, fill=PANEL, outline=BORDER, tags="fBACK")
-        c.create_text(258, 128, text="\u25c0", fill=MUTED, font=("Segoe UI", 6), tags="tBACK")
-        c.create_oval(294, 120, 310, 136, fill=PANEL, outline=BORDER, tags="fSTART")
-        c.create_text(302, 128, text="\u25b6", fill=MUTED, font=("Segoe UI", 6), tags="tSTART")
-        # d-pad (left, centered at 205,185)
-        cx, cy = 205, 185
+        c.create_oval(248, 92, 264, 108, fill=PANEL, outline=BORDER, tags="fBACK")
+        c.create_text(256, 100, text="\u25c0", fill=MUTED, font=("Segoe UI", 6), tags="tBACK")
+        c.create_oval(296, 92, 312, 108, fill=PANEL, outline=BORDER, tags="fSTART")
+        c.create_text(304, 100, text="\u25b6", fill=MUTED, font=("Segoe UI", 6), tags="tSTART")
+        # d-pad (left, centered at 190,180)
+        cx, cy = 190, 180
         c.create_rectangle(cx - 9, cy - 34, cx + 9, cy - 4, fill=pad, outline=BORDER, tags="fDPAD_UP")
         c.create_rectangle(cx - 9, cy + 4, cx + 9, cy + 34, fill=pad, outline=BORDER, tags="fDPAD_DOWN")
         c.create_rectangle(cx - 34, cy - 9, cx - 4, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_LEFT")
         c.create_rectangle(cx + 4, cy - 9, cx + 34, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_RIGHT")
         c.create_rectangle(cx - 6, cy - 6, cx + 6, cy + 6, fill="#10151D", outline=BORDER)
-        # abxy (right, centered at 355,185)
-        bx, by = 355, 185
+        # abxy (right, centered at 370,180)
+        bx, by = 370, 180
         for key, dx, dy in (("B", 0, -28), ("A", 28, 0), ("X", -28, 0), ("Y", 0, 28)):
             c.create_oval(bx + dx - 15, by + dy - 15, bx + dx + 15, by + dy + 15, fill=pad, outline=BORDER, tags="f" + key)
             c.create_text(bx + dx, by + dy, text=key, fill=MUTED, font=("Segoe UI", 9, "bold"), tags="t" + key)
         # analog sticks (symmetric)
-        for key, sx, sy in (("LS", 205, 265), ("RS", 355, 265)):
-            c.create_oval(sx - 32, sy - 32, sx + 32, sy + 32, fill="#10151D", outline=BORDER)
-            c.create_oval(sx - 20, sy - 20, sx + 20, sy + 20, fill=pad, outline=BORDER, tags="f" + key)
+        for key, sx, sy in (("LS", 190, 260), ("RS", 370, 260)):
+            c.create_oval(sx - 34, sy - 34, sx + 34, sy + 34, fill="#10151D", outline=BORDER)
+            c.create_oval(sx - 22, sy - 22, sx + 22, sy + 22, fill=pad, outline=BORDER, tags="f" + key)
             c.create_text(sx, sy, text="L3" if key == "LS" else "R3", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="t" + key)
             c.create_oval(sx - 3, sy - 3, sx + 3, sy + 3, fill=GOLD, outline="", tags="dot" + key)
     def _build_mapping(self, parent):
@@ -1797,26 +1800,26 @@ class App:
             ly = float(state.get("ly", 0.0) or 0.0)
             rx = float(state.get("rx", 0.0) or 0.0)
             ry = float(state.get("ry", 0.0) or 0.0)
-            for key, sx, sy, ax, ay in (("LS", 205, 265, lx, ly), ("RS", 355, 265, rx, ry)):
+            for key, sx, sy, ax, ay in (("LS", 190, 260, lx, ly), ("RS", 370, 260, rx, ry)):
                 on = key in pressed
-                dx = int(ax * 14)
-                dy = -int(ay * 14)
-                c.coords("f" + key, sx + dx - 20, sy + dy - 20, sx + dx + 20, sy + dy + 20)
+                dx = int(ax * 16)
+                dy = -int(ay * 16)
+                c.coords("f" + key, sx + dx - 22, sy + dy - 22, sx + dx + 22, sy + dy + 22)
                 c.coords("t" + key, sx + dx, sy + dy)
                 c.itemconfig("f" + key, fill=GOLD if on else "#2A3342")
                 c.itemconfig("t" + key, fill="#101318" if on else MUTED)
-            # analog trigger bars (fill grows with the trigger value)
+            # analog trigger bars (vertical, fill grows bottom-up with the trigger value)
             for tag, val in (("LT", float(state.get("lt", 0.0) or 0.0)),
                              ("RT", float(state.get("rt", 0.0) or 0.0))):
-                x0, x1 = (192, 218) if tag == "LT" else (342, 368)
-                bottom, top = 146, 114
+                x0, x1 = (138, 148) if tag == "LT" else (412, 422)
+                bottom, top = 220, 100
                 h = max(0, int((bottom - top) * max(0.0, min(1.0, val))))
                 c.coords("trigfill" + tag, x0, bottom - h, x1, bottom)
                 c.itemconfig("trigfill" + tag, fill=GOLD if val > 0.5 else MUTED)
             # stick direction dots
-            for key, sx, sy, ax, ay in (("LS", 205, 265, lx, ly), ("RS", 355, 265, rx, ry)):
-                dx = int(ax * 10)
-                dy = -int(ay * 10)
+            for key, sx, sy, ax, ay in (("LS", 190, 260, lx, ly), ("RS", 370, 260, rx, ry)):
+                dx = int(ax * 12)
+                dy = -int(ay * 12)
                 c.coords("dot" + key, sx + dx - 3, sy + dy - 3, sx + dx + 3, sy + dy + 3)
             # dim the pad when no controller is connected
             c.config(bg=CARD if state.get("connected") else "#0D1117")
