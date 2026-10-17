@@ -1233,7 +1233,7 @@ class App:
         c.create_rectangle(cx - 6, cy - 6, cx + 6, cy + 6, fill="#10151D", outline=BORDER)
         # abxy (right, centered at 370,180)
         bx, by = 370, 180
-        for key, dx, dy in (("B", 0, -28), ("A", 28, 0), ("X", -28, 0), ("Y", 0, 28)):
+        for key, dx, dy in (("Y", 0, -28), ("X", -28, 0), ("B", 28, 0), ("A", 0, 28)):
             c.create_oval(bx + dx - 15, by + dy - 15, bx + dx + 15, by + dy + 15, fill=pad, outline=BORDER, tags="f" + key)
             c.create_text(bx + dx, by + dy, text=key, fill=MUTED, font=("Segoe UI", 9, "bold"), tags="t" + key)
         # analog sticks (symmetric)
