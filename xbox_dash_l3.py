@@ -1204,6 +1204,11 @@ class App:
         c.create_text(235, 84, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
         c.create_rectangle(312, 78, 358, 90, fill=PANEL, outline=BORDER, tags="fRT")
         c.create_text(335, 84, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
+        # analog trigger bars (fill grows with the trigger value)
+        c.create_rectangle(220, 114, 250, 146, fill="#10151D", outline=BORDER, tags="trigbgLT")
+        c.create_rectangle(222, 146, 248, 146, fill=GOLD, outline="", tags="trigfillLT")
+        c.create_rectangle(320, 114, 350, 146, fill="#10151D", outline=BORDER, tags="trigbgRT")
+        c.create_rectangle(322, 146, 348, 146, fill=GOLD, outline="", tags="trigfillRT")
         c.create_rectangle(210, 96, 260, 112, fill=PANEL, outline=BORDER, tags="fLB")
         c.create_text(235, 104, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
         c.create_rectangle(310, 96, 360, 112, fill=PANEL, outline=BORDER, tags="fRB")
@@ -1226,6 +1231,7 @@ class App:
             c.create_oval(sx - 30, sy - 30, sx + 30, sy + 30, fill="#10151D", outline=BORDER)
             c.create_oval(sx - 18, sy - 18, sx + 18, sy + 18, fill=pad, outline=BORDER, tags="f" + key)
             c.create_text(sx, sy, text="L3" if key == "LS" else "R3", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="t" + key)
+            c.create_oval(sx - 3, sy - 3, sx + 3, sy + 3, fill=GOLD, outline="", tags="dot" + key)
     def _build_mapping(self, parent):
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(4, weight=1)
@@ -1792,6 +1798,21 @@ class App:
                 c.coords("t" + key, sx + dx, sy + dy)
                 c.itemconfig("f" + key, fill=GOLD if on else "#2A3342")
                 c.itemconfig("t" + key, fill="#101318" if on else MUTED)
+            # analog trigger bars (fill grows with the trigger value)
+            for tag, val in (("LT", float(state.get("lt", 0.0) or 0.0)),
+                             ("RT", float(state.get("rt", 0.0) or 0.0))):
+                x0, x1 = (222, 248) if tag == "LT" else (322, 348)
+                bottom, top = 146, 114
+                h = max(0, int((bottom - top) * max(0.0, min(1.0, val))))
+                c.coords("trigfill" + tag, x0, bottom - h, x1, bottom)
+                c.itemconfig("trigfill" + tag, fill=GOLD if val > 0.5 else MUTED)
+            # stick direction dots
+            for key, sx, sy, ax, ay in (("LS", 208, 252, lx, ly), ("RS", 352, 252, rx, ry)):
+                dx = int(ax * 10)
+                dy = -int(ay * 10)
+                c.coords("dot" + key, sx + dx - 3, sy + dy - 3, sx + dx + 3, sy + dy + 3)
+            # dim the pad when no controller is connected
+            c.config(bg=CARD if state.get("connected") else "#0D1117")
         except Exception:
             pass
 
