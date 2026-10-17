@@ -1197,39 +1197,46 @@ class App:
         c.delete("all")
         body = "#1A202A"
         pad = "#2A3342"
-        points = [170, 150, 195, 115, 240, 105, 280, 100, 320, 100, 360, 105, 405, 115, 430, 150,
-                  440, 200, 420, 285, 385, 320, 340, 300, 300, 250, 260, 250, 220, 300, 175, 320, 140, 285, 130, 200]
+        # symmetric Xbox-style body (centered at x=280)
+        points = [160, 140, 190, 100, 280, 88, 370, 100, 400, 140,
+                  412, 190, 400, 290, 365, 335, 320, 305, 300, 255,
+                  280, 245, 260, 255, 240, 305, 195, 335, 160, 290, 148, 190]
         c.create_polygon(points, smooth=True, fill=body, outline=BORDER, width=2)
-        c.create_rectangle(212, 78, 258, 90, fill=PANEL, outline=BORDER, tags="fLT")
-        c.create_text(235, 84, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
-        c.create_rectangle(312, 78, 358, 90, fill=PANEL, outline=BORDER, tags="fRT")
-        c.create_text(335, 84, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
+        # shoulders (symmetric around x=280)
+        c.create_rectangle(175, 78, 235, 90, fill=PANEL, outline=BORDER, tags="fLT")
+        c.create_text(205, 84, text="LT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tLT")
+        c.create_rectangle(325, 78, 385, 90, fill=PANEL, outline=BORDER, tags="fRT")
+        c.create_text(355, 84, text="RT", fill=MUTED, font=("Segoe UI", 7, "bold"), tags="tRT")
+        c.create_rectangle(180, 96, 230, 112, fill=PANEL, outline=BORDER, tags="fLB")
+        c.create_text(205, 104, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
+        c.create_rectangle(330, 96, 380, 112, fill=PANEL, outline=BORDER, tags="fRB")
+        c.create_text(355, 104, text="RB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tRB")
         # analog trigger bars (fill grows with the trigger value)
-        c.create_rectangle(220, 114, 250, 146, fill="#10151D", outline=BORDER, tags="trigbgLT")
-        c.create_rectangle(222, 146, 248, 146, fill=GOLD, outline="", tags="trigfillLT")
-        c.create_rectangle(320, 114, 350, 146, fill="#10151D", outline=BORDER, tags="trigbgRT")
-        c.create_rectangle(322, 146, 348, 146, fill=GOLD, outline="", tags="trigfillRT")
-        c.create_rectangle(210, 96, 260, 112, fill=PANEL, outline=BORDER, tags="fLB")
-        c.create_text(235, 104, text="LB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tLB")
-        c.create_rectangle(310, 96, 360, 112, fill=PANEL, outline=BORDER, tags="fRB")
-        c.create_text(335, 104, text="RB", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="tRB")
-        c.create_oval(253, 122, 269, 138, fill=PANEL, outline=BORDER, tags="fBACK")
-        c.create_text(261, 130, text="\u25c0", fill=MUTED, font=("Segoe UI", 6), tags="tBACK")
-        c.create_oval(301, 122, 317, 138, fill=PANEL, outline=BORDER, tags="fSTART")
-        c.create_text(309, 130, text="\u25b6", fill=MUTED, font=("Segoe UI", 6), tags="tSTART")
-        cx, cy = 208, 185
+        c.create_rectangle(190, 114, 220, 146, fill="#10151D", outline=BORDER, tags="trigbgLT")
+        c.create_rectangle(192, 146, 218, 146, fill=GOLD, outline="", tags="trigfillLT")
+        c.create_rectangle(340, 114, 370, 146, fill="#10151D", outline=BORDER, tags="trigbgRT")
+        c.create_rectangle(342, 146, 368, 146, fill=GOLD, outline="", tags="trigfillRT")
+        # back / start (symmetric around x=280)
+        c.create_oval(250, 120, 266, 136, fill=PANEL, outline=BORDER, tags="fBACK")
+        c.create_text(258, 128, text="\u25c0", fill=MUTED, font=("Segoe UI", 6), tags="tBACK")
+        c.create_oval(294, 120, 310, 136, fill=PANEL, outline=BORDER, tags="fSTART")
+        c.create_text(302, 128, text="\u25b6", fill=MUTED, font=("Segoe UI", 6), tags="tSTART")
+        # d-pad (left, centered at 205,185)
+        cx, cy = 205, 185
         c.create_rectangle(cx - 9, cy - 34, cx + 9, cy - 4, fill=pad, outline=BORDER, tags="fDPAD_UP")
         c.create_rectangle(cx - 9, cy + 4, cx + 9, cy + 34, fill=pad, outline=BORDER, tags="fDPAD_DOWN")
         c.create_rectangle(cx - 34, cy - 9, cx - 4, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_LEFT")
         c.create_rectangle(cx + 4, cy - 9, cx + 34, cy + 9, fill=pad, outline=BORDER, tags="fDPAD_RIGHT")
         c.create_rectangle(cx - 6, cy - 6, cx + 6, cy + 6, fill="#10151D", outline=BORDER)
-        bx, by = 355, 172
-        for key, dx, dy in (("B", 0, -30), ("A", 30, 0), ("X", -30, 0), ("Y", 0, 30)):
-            c.create_oval(bx + dx - 16, by + dy - 16, bx + dx + 16, by + dy + 16, fill=pad, outline=BORDER, tags="f" + key)
-            c.create_text(bx + dx, by + dy, text=key, fill=MUTED, font=("Segoe UI", 10, "bold"), tags="t" + key)
-        for key, sx, sy in (("LS", 208, 252), ("RS", 352, 252)):
-            c.create_oval(sx - 30, sy - 30, sx + 30, sy + 30, fill="#10151D", outline=BORDER)
-            c.create_oval(sx - 18, sy - 18, sx + 18, sy + 18, fill=pad, outline=BORDER, tags="f" + key)
+        # abxy (right, centered at 355,185)
+        bx, by = 355, 185
+        for key, dx, dy in (("B", 0, -28), ("A", 28, 0), ("X", -28, 0), ("Y", 0, 28)):
+            c.create_oval(bx + dx - 15, by + dy - 15, bx + dx + 15, by + dy + 15, fill=pad, outline=BORDER, tags="f" + key)
+            c.create_text(bx + dx, by + dy, text=key, fill=MUTED, font=("Segoe UI", 9, "bold"), tags="t" + key)
+        # analog sticks (symmetric)
+        for key, sx, sy in (("LS", 205, 265), ("RS", 355, 265)):
+            c.create_oval(sx - 32, sy - 32, sx + 32, sy + 32, fill="#10151D", outline=BORDER)
+            c.create_oval(sx - 20, sy - 20, sx + 20, sy + 20, fill=pad, outline=BORDER, tags="f" + key)
             c.create_text(sx, sy, text="L3" if key == "LS" else "R3", fill=MUTED, font=("Segoe UI", 8, "bold"), tags="t" + key)
             c.create_oval(sx - 3, sy - 3, sx + 3, sy + 3, fill=GOLD, outline="", tags="dot" + key)
     def _build_mapping(self, parent):
@@ -1790,24 +1797,24 @@ class App:
             ly = float(state.get("ly", 0.0) or 0.0)
             rx = float(state.get("rx", 0.0) or 0.0)
             ry = float(state.get("ry", 0.0) or 0.0)
-            for key, sx, sy, ax, ay in (("LS", 208, 252, lx, ly), ("RS", 352, 252, rx, ry)):
+            for key, sx, sy, ax, ay in (("LS", 205, 265, lx, ly), ("RS", 355, 265, rx, ry)):
                 on = key in pressed
                 dx = int(ax * 14)
                 dy = -int(ay * 14)
-                c.coords("f" + key, sx + dx - 18, sy + dy - 18, sx + dx + 18, sy + dy + 18)
+                c.coords("f" + key, sx + dx - 20, sy + dy - 20, sx + dx + 20, sy + dy + 20)
                 c.coords("t" + key, sx + dx, sy + dy)
                 c.itemconfig("f" + key, fill=GOLD if on else "#2A3342")
                 c.itemconfig("t" + key, fill="#101318" if on else MUTED)
             # analog trigger bars (fill grows with the trigger value)
             for tag, val in (("LT", float(state.get("lt", 0.0) or 0.0)),
                              ("RT", float(state.get("rt", 0.0) or 0.0))):
-                x0, x1 = (222, 248) if tag == "LT" else (322, 348)
+                x0, x1 = (192, 218) if tag == "LT" else (342, 368)
                 bottom, top = 146, 114
                 h = max(0, int((bottom - top) * max(0.0, min(1.0, val))))
                 c.coords("trigfill" + tag, x0, bottom - h, x1, bottom)
                 c.itemconfig("trigfill" + tag, fill=GOLD if val > 0.5 else MUTED)
             # stick direction dots
-            for key, sx, sy, ax, ay in (("LS", 208, 252, lx, ly), ("RS", 352, 252, rx, ry)):
+            for key, sx, sy, ax, ay in (("LS", 205, 265, lx, ly), ("RS", 355, 265, rx, ry)):
                 dx = int(ax * 10)
                 dy = -int(ay * 10)
                 c.coords("dot" + key, sx + dx - 3, sy + dy - 3, sx + dx + 3, sy + dy + 3)
