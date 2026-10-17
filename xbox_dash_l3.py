@@ -1846,7 +1846,7 @@ class MappingEditor(tk.Toplevel):
         self.title(T(self.lang, "editor_edit") if self.editing else T(self.lang, "editor_new"))
         self.configure(bg=BG)
         self.geometry("720x670")
-        self.minsize(680, 620)
+        self.minsize(680, 400)
         self.transient(app.root)
         self._vars()
         self._build()
@@ -1888,10 +1888,27 @@ class MappingEditor(tk.Toplevel):
         return sp
 
     def _build(self):
-        body = tk.Frame(self, bg=BG)
-        body.pack(fill="both", expand=True, padx=10, pady=10)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        # scrollable content area
+        scroll_frame = tk.Frame(self, bg=BG)
+        scroll_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=(10, 0))
+        scroll_frame.columnconfigure(0, weight=1)
+        scroll_frame.rowconfigure(0, weight=1)
+        self._scroll_canvas = tk.Canvas(scroll_frame, bg=BG, highlightthickness=0)
+        sb = ttk.Scrollbar(scroll_frame, orient="vertical", command=self._scroll_canvas.yview)
+        self._scroll_canvas.configure(yscrollcommand=sb.set)
+        self._scroll_canvas.grid(row=0, column=0, sticky="nsew")
+        sb.grid(row=0, column=1, sticky="ns")
+        body = tk.Frame(self._scroll_canvas, bg=BG)
+        self._canvas_window = self._scroll_canvas.create_window((0, 0), window=body, anchor="nw")
         body.columnconfigure(0, weight=1)
         body.columnconfigure(1, weight=1)
+        body.bind("<Configure>", lambda e: self._scroll_canvas.configure(scrollregion=self._scroll_canvas.bbox("all")))
+        self._scroll_canvas.bind("<Configure>", lambda e: self._scroll_canvas.itemconfig(self._canvas_window, width=e.width))
+        self._scroll_canvas.bind_all("<MouseWheel>", self._on_editor_mousewheel)
+        # bottom bar stays fixed (row 1)
+        self.rowconfigure(1, weight=0)
         # ---------- input ----------
         card = self._section(body, "editor_input", 0, 0)
         self.cb_input = ttk.Combobox(card, textvariable=self.var_input, state="readonly", width=28, values=[INPUT_LABELS[k] for k in ALL_INPUTS])
@@ -1930,6 +1947,7 @@ class MappingEditor(tk.Toplevel):
         self._build_mode(body)
         self._build_delays(body)
         self._build_bottom()
+        self._fit_editor_window()
     def _build_mode(self, body):
         card = self._section(body, "editor_mode", 0, 1)
         for key in self.MODE_KEYS:
@@ -1986,13 +2004,36 @@ class MappingEditor(tk.Toplevel):
 
     def _build_bottom(self):
         bar = tk.Frame(self, bg=BG)
-        bar.pack(fill="x", padx=14, pady=(2, 12))
+        bar.grid(row=1, column=0, sticky="ew", padx=14, pady=(2, 12))
         tk.Button(bar, text=T(self.lang, "editor_test"), bg=PANEL, fg=GOLD, relief="flat", padx=12, pady=6, command=self._test).pack(side="left")
         self.lbl_test = tk.Label(bar, text=T(self.lang, "editor_test_info"), bg=BG, fg=MUTED, font=("Segoe UI", 8), wraplength=260, justify="left")
         self.lbl_test.pack(side="left", padx=8)
         tk.Button(bar, text=T(self.lang, "editor_reset"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._reset).pack(side="left", padx=(10, 0))
         tk.Button(bar, text=T(self.lang, "editor_save"), bg=GOLD, fg="#101318", relief="flat", padx=16, pady=6, command=self._save).pack(side="right")
         tk.Button(bar, text=T(self.lang, "editor_cancel"), bg=PANEL, fg=TEXT, relief="flat", padx=12, pady=6, command=self._cancel).pack(side="right", padx=(0, 8))
+
+    def _on_editor_mousewheel(self, event):
+        try:
+            self._scroll_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        except Exception:
+            pass
+
+    def _fit_editor_window(self):
+        try:
+            self.update_idletasks()
+            bbox = self._scroll_canvas.bbox("all")
+            req_h = (bbox[3] if bbox else 600) + 140  # + bottom bar & margins
+            screen_h = self.winfo_screenheight()
+            usable = max(400, screen_h - 80)
+            target_h = min(req_h, usable)
+            target_h = max(target_h, 420)
+            target_w = 760
+            x = max(0, (self.winfo_screenwidth() - target_w) // 2)
+            y = max(0, (screen_h - target_h) // 2)
+            self.geometry(f"{target_w}x{target_h}+{x}+{y}")
+            self.minsize(680, 400)
+        except Exception:
+            pass
 
     def _int(self, var, default=0, lo=0, hi=99999):
         try:
@@ -2218,6 +2259,10 @@ class MappingEditor(tk.Toplevel):
 
     def _close(self):
         self.detecting = False
+        try:
+            self._scroll_canvas.unbind_all("<MouseWheel>")
+        except Exception:
+            pass
         try:
             self.grab_release()
         except Exception:
